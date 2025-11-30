@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IScout - Lista de Jogadores</title>
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/jogadores.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-small">⚽</div>
+                    <h1>IScout</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="./jogadores.html" class="nav-link active">Jogadores</a>
+                    <a href="./historico.html" class="nav-link">Historico</a>
+                    <a href="./evolucao.html" class="nav-link">Evolução</a>
+                    <a href="./relatorios.html" class="nav-link">Relatórios</a>
+                    <a href="./cadastro-jogador.html" class="nav-link">Cadastrar</a>
+                    <a href="./estatisticas.html" class="nav-link">Estatísticas</a>
+                    <a href="./usuarios.html" class="nav-link">Usuários</a>
+                </nav>
+                <div class="header-right">
+                    <span class="user-name" id="userName">Usuário</span>
+                    <button class="btn-secondary btn-sm" id="logoutBtn">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h2>Jogadores Cadastrados</h2>
+                        <p class="page-subtitle">Gerencie os jogadores da escola</p>
+                    </div>
+                    <div class="page-actions">
+                        <a href="./cadastro-jogador.html" class="btn">+ Novo Jogador</a>
+                    </div>
+                </div>
+
+                <!-- Filtros e Busca -->
+                <div class="filters-section">
+                    <div class="search-box">
+                        <input 
+                            type="text" 
+                            id="searchInput" 
+                            class="form-control" 
+                            placeholder="Buscar por nome ou posição..."
+                        >
+                    </div>
+                    <div class="filter-controls">
+                        <select id="categoriaFilter" class="form-control">
+                            <option value="">Todas as Categorias</option>
+                            <option value="sub-11">Sub-11</option>
+                            <option value="sub-13">Sub-13</option>
+                            <option value="sub-15">Sub-15</option>
+                            <option value="sub-17">Sub-17</option>
+                            <option value="sub-20">Sub-20</option>
+                        </select>
+                        <select id="posicaoFilter" class="form-control">
+                            <option value="">Todas as Posições</option>
+                            <option value="goleiro">Goleiro</option>
+                            <option value="zagueiro">Zagueiro</option>
+                            <option value="lateral">Lateral</option>
+                            <option value="volante">Volante</option>
+                            <option value="meia">Meia</option>
+                            <option value="atacante">Atacante</option>
+                        </select>
+                        <button class="btn-secondary" id="clearFiltersBtn">Limpar Filtros</button>
+                    </div>
+                </div>
+
+                <!-- Contador de Resultados -->
+                <div class="results-info">
+                    <span id="resultsCount">0 jogadores encontrados</span>
+                </div>
+
+                <!-- Lista de Jogadores -->
+                <div class="players-grid" id="playersGrid">
+                    <!-- Carregando -->
+                    <div class="loading-state" id="loadingState">
+                        <div class="spinner"></div>
+                        <p>Carregando jogadores...</p>
+                    </div>
+
+                    <!-- Estado Vazio -->
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">⚽</div>
+                        <h3>Nenhum jogador encontrado</h3>
+                        <p>Comece cadastrando o primeiro jogador da escola</p>
+                        <a href="./cadastro-jogador.html" class="btn">Cadastrar Primeiro Jogador</a>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Detalhes do Jogador -->
+    <div class="modal" id="playerModal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalPlayerName">Nome do Jogador</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body" id="modalBody">
+                <!-- Conteúdo será inserido dinamicamente -->
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCloseBtn">Fechar</button>
+                <button class="btn" id="editPlayerBtn">Editar</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="../js/pages/jogadores.js"></script>
+</body>
+</html>

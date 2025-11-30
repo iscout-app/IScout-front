@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IScout - Evolução do Atleta</title>
+    <link rel="stylesheet" href="../css/variables.css">
+    <link rel="stylesheet" href="../css/reset.css">
+    <link rel="stylesheet" href="../css/components.css">
+    <link rel="stylesheet" href="../css/evolucao.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-small">⚽</div>
+                    <h1>IScout</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="./jogadores.html" class="nav-link">Jogadores</a>
+                    <a href="./historico.html" class="nav-link">Histórico</a>
+                    <a href="./evolucao.html" class="nav-link active">Evolução</a>
+                    <a href="./relatorios.html" class="nav-link">Relatórios</a>
+                    <a href="./cadastro-jogador.html" class="nav-link">Cadastrar</a>
+                    <a href="./estatisticas.html" class="nav-link">Estatísticas</a>
+                    <a href="./usuarios.html" class="nav-link">Usuários</a>
+                </nav>
+                <div class="header-right">
+                    <span class="user-name" id="userName">Usuário</span>
+                    <button class="btn-secondary btn-sm" id="logoutBtn">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h2>Evolução do Atleta</h2>
+                        <p class="page-subtitle">Visualize a evolução temporal do desempenho através de gráficos</p>
+                    </div>
+                </div>
+
+                <!-- Seleção de Jogador -->
+                <div class="player-selector-section">
+                    <div class="form-group">
+                        <label class="form-label" for="jogadorSelect">Selecione o Jogador</label>
+                        <select id="jogadorSelect" class="form-control">
+                            <option value="">Selecione um jogador...</option>
+                        </select>
+                    </div>
+                </div>
+
+                <!-- Estado: Nenhum Jogador Selecionado -->
+                <div class="empty-state" id="noPlayerState">
+                    <div class="empty-icon">📈</div>
+                    <h3>Selecione um Jogador</h3>
+                    <p>Escolha um jogador acima para visualizar sua evolução de desempenho</p>
+                </div>
+
+                <!-- Conteúdo dos Gráficos -->
+                <div class="charts-content" id="chartsContent" style="display: none;">
+                    <!-- Informações do Jogador -->
+                    <div class="player-info-card" id="playerInfoCard">
+                        <!-- Será preenchido dinamicamente -->
+                    </div>
+
+                    <!-- Filtros -->
+                    <div class="filters-section">
+                        <div class="filter-controls">
+                            <select id="periodoFilter" class="form-control">
+                                <option value="todos">Todo o Período</option>
+                                <option value="ultimos30">Últimos 30 dias</option>
+                                <option value="ultimos90">Últimos 3 meses</option>
+                                <option value="ultimos180">Últimos 6 meses</option>
+                                <option value="ultimo-ano">Último Ano</option>
+                            </select>
+                            <select id="tipoEventoFilter" class="form-control">
+                                <option value="todos">Treinos e Partidas</option>
+                                <option value="partida">Apenas Partidas</option>
+                                <option value="treino">Apenas Treinos</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <!-- Cards de Estatísticas Resumidas -->
+                    <div class="stats-cards-grid">
+                        <div class="stats-card">
+                            <div class="stats-card-icon">📈</div>
+                            <div class="stats-card-content">
+                                <span class="stats-card-label">Tendência Geral</span>
+                                <span class="stats-card-value" id="tendenciaGeral">--</span>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-icon">⚽</div>
+                            <div class="stats-card-content">
+                                <span class="stats-card-label">Gols por Evento</span>
+                                <span class="stats-card-value" id="golsPorEvento">0.0</span>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-icon">🎯</div>
+                            <div class="stats-card-content">
+                                <span class="stats-card-label">Assist. por Evento</span>
+                                <span class="stats-card-value" id="assistPorEvento">0.0</span>
+                            </div>
+                        </div>
+                        <div class="stats-card">
+                            <div class="stats-card-icon">⭐</div>
+                            <div class="stats-card-content">
+                                <span class="stats-card-label">Melhor Nota</span>
+                                <span class="stats-card-value" id="melhorNota">0.0</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Gráficos -->
+                    <div class="charts-grid">
+                        <!-- Gráfico de Desempenho Geral -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Evolução da Nota de Desempenho</h3>
+                                <p>Acompanhe a evolução da nota ao longo do tempo</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="notasChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Gols e Assistências -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Gols e Assistências</h3>
+                                <p>Participações ofensivas ao longo do tempo</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="golsAssistChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Precisão de Passe -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Precisão de Passes</h3>
+                                <p>Evolução da qualidade técnica nos passes</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="passesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Ações Defensivas -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Ações Defensivas</h3>
+                                <p>Desarmes e interceptações ao longo do tempo</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="defensivasChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico de Disciplina -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Disciplina</h3>
+                                <p>Cartões recebidos ao longo do tempo</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="cartoesChart"></canvas>
+                            </div>
+                        </div>
+
+                        <!-- Gráfico Comparativo: Treinos vs Partidas -->
+                        <div class="chart-card">
+                            <div class="chart-header">
+                                <h3>Desempenho: Treinos vs Partidas</h3>
+                                <p>Comparação de notas entre treinos e partidas</p>
+                            </div>
+                            <div class="chart-container">
+                                <canvas id="comparativoChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Estado Vazio de Dados -->
+                    <div class="empty-state" id="noDataState" style="display: none;">
+                        <div class="empty-icon">📊</div>
+                        <h3>Sem dados suficientes</h3>
+                        <p>Não há estatísticas suficientes para gerar gráficos de evolução para este jogador no período selecionado</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="../js/pages/evolucao.js"></script>
+</body>
+</html>
