@@ -1,0 +1,363 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IScout - Registrar Estatísticas</title>
+    <link rel="stylesheet" href="../styles/variables.css">
+    <link rel="stylesheet" href="../styles/reset.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/estatisticas.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-small">⚽</div>
+                    <h1>IScout</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="./jogadores.html" class="nav-link">Jogadores</a>
+                    <a href="./historico.html" class="nav-link">Historico</a>
+                    <a href="./evolucao.html" class="nav-link">Evolução</a>
+                    <a href="./relatorios.html" class="nav-link">Relatórios</a>
+                    <a href="./cadastro-jogador.html" class="nav-link">Cadastrar</a>
+                    <a href="./estatisticas.html" class="nav-link active">Estatísticas</a>
+                    <a href="./usuarios.html" class="nav-link">Usuários</a>
+                </nav>
+                <div class="header-right">
+                    <span class="user-name" id="userName">Usuário</span>
+                    <button class="btn-secondary btn-sm" id="logoutBtn">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <h2>Registrar Estatísticas</h2>
+                    <p class="page-subtitle">Registre o desempenho dos jogadores em treinos e partidas</p>
+                </div>
+
+                <div class="success-message" id="successMessage">
+                    Estatísticas registradas com sucesso!
+                </div>
+
+                <div class="error-message" id="errorMessage">
+                    Erro ao registrar estatísticas. Tente novamente.
+                </div>
+
+                <form id="statsForm" class="stats-form">
+                    <!-- Informações Básicas -->
+                    <section class="form-section">
+                        <h3 class="section-title">Informações do Evento</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="jogadorSelect">Jogador *</label>
+                                <select id="jogadorSelect" class="form-control" required>
+                                    <option value="">Selecione o jogador...</option>
+                                </select>
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="tipoEvento">Tipo de Evento *</label>
+                                <select id="tipoEvento" class="form-control" required>
+                                    <option value="">Selecione...</option>
+                                    <option value="treino">Treino</option>
+                                    <option value="partida">Partida</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="dataEvento">Data do Evento *</label>
+                                <input 
+                                    type="date" 
+                                    id="dataEvento" 
+                                    class="form-control"
+                                    required
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="duracaoMinutos">Minutos Jogados *</label>
+                                <input 
+                                    type="number" 
+                                    id="duracaoMinutos" 
+                                    class="form-control" 
+                                    placeholder="90"
+                                    min="0"
+                                    max="120"
+                                    required
+                                >
+                            </div>
+                        </div>
+
+                        <!-- Informações Adicionais de Partida -->
+                        <div id="partidaInfo" style="display: none;">
+                            <div class="form-row">
+                                <div class="form-group">
+                                    <label class="form-label" for="adversario">Adversário</label>
+                                    <input 
+                                        type="text" 
+                                        id="adversario" 
+                                        class="form-control" 
+                                        placeholder="Nome do time adversário"
+                                    >
+                                </div>
+                                <div class="form-group">
+                                    <label class="form-label" for="resultado">Resultado</label>
+                                    <input 
+                                        type="text" 
+                                        id="resultado" 
+                                        class="form-control" 
+                                        placeholder="Ex: 3x2"
+                                    >
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Estatísticas Ofensivas -->
+                    <section class="form-section">
+                        <h3 class="section-title">Estatísticas Ofensivas</h3>
+                        
+                        <div class="form-row form-row-4">
+                            <div class="form-group">
+                                <label class="form-label" for="gols">Gols</label>
+                                <input 
+                                    type="number" 
+                                    id="gols" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="assistencias">Assistências</label>
+                                <input 
+                                    type="number" 
+                                    id="assistencias" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="finalizacoes">Finalizações</label>
+                                <input 
+                                    type="number" 
+                                    id="finalizacoes" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="finalizacoesGol">Finalizações no Gol</label>
+                                <input 
+                                    type="number" 
+                                    id="finalizacoesGol" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Estatísticas de Passe -->
+                    <section class="form-section">
+                        <h3 class="section-title">Estatísticas de Passe</h3>
+                        
+                        <div class="form-row form-row-3">
+                            <div class="form-group">
+                                <label class="form-label" for="passesCertos">Passes Certos</label>
+                                <input 
+                                    type="number" 
+                                    id="passesCertos" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="passesErrados">Passes Errados</label>
+                                <input 
+                                    type="number" 
+                                    id="passesErrados" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="precisaoPasse">Precisão (%)</label>
+                                <input 
+                                    type="text" 
+                                    id="precisaoPasse" 
+                                    class="form-control" 
+                                    placeholder="0%"
+                                    readonly
+                                >
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Estatísticas Defensivas -->
+                    <section class="form-section">
+                        <h3 class="section-title">Estatísticas Defensivas</h3>
+                        
+                        <div class="form-row form-row-4">
+                            <div class="form-group">
+                                <label class="form-label" for="desarmes">Desarmes</label>
+                                <input 
+                                    type="number" 
+                                    id="desarmes" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="interceptacoes">Interceptações</label>
+                                <input 
+                                    type="number" 
+                                    id="interceptacoes" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="faltasCometidas">Faltas Cometidas</label>
+                                <input 
+                                    type="number" 
+                                    id="faltasCometidas" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="faltasSofridas">Faltas Sofridas</label>
+                                <input 
+                                    type="number" 
+                                    id="faltasSofridas" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    value="0"
+                                >
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Cartões e Disciplina -->
+                    <section class="form-section">
+                        <h3 class="section-title">Cartões e Disciplina</h3>
+                        
+                        <div class="form-row form-row-3">
+                            <div class="form-group">
+                                <label class="form-label" for="cartoesAmarelos">Cartões Amarelos</label>
+                                <input 
+                                    type="number" 
+                                    id="cartoesAmarelos" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    max="2"
+                                    value="0"
+                                >
+                            </div>
+                            <div class="form-group">
+                                <label class="form-label" for="cartoesVermelhos">Cartões Vermelhos</label>
+                                <input 
+                                    type="number" 
+                                    id="cartoesVermelhos" 
+                                    class="form-control stat-input" 
+                                    placeholder="0"
+                                    min="0"
+                                    max="1"
+                                    value="0"
+                                >
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Avaliação e Observações -->
+                    <section class="form-section">
+                        <h3 class="section-title">Avaliação e Observações</h3>
+                        
+                        <div class="form-row">
+                            <div class="form-group">
+                                <label class="form-label" for="notaDesempenho">Nota de Desempenho (0-10)</label>
+                                <input 
+                                    type="number" 
+                                    id="notaDesempenho" 
+                                    class="form-control" 
+                                    placeholder="7.5"
+                                    min="0"
+                                    max="10"
+                                    step="0.1"
+                                >
+                            </div>
+                        </div>
+
+                        <div class="form-group">
+                            <label class="form-label" for="observacoes">Observações do Técnico/Olheiro</label>
+                            <textarea 
+                                id="observacoes" 
+                                class="form-control" 
+                                rows="4"
+                                placeholder="Observações sobre o desempenho, pontos fortes, áreas a melhorar..."
+                            ></textarea>
+                        </div>
+                    </section>
+
+                    <!-- Resumo Rápido -->
+                    <div class="stats-summary" id="statsSummary">
+                        <h4>Resumo das Estatísticas</h4>
+                        <div class="summary-grid">
+                            <div class="summary-item">
+                                <span class="summary-label">Gols + Assistências</span>
+                                <span class="summary-value" id="summaryGolsAssist">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Total de Passes</span>
+                                <span class="summary-value" id="summaryPasses">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Ações Defensivas</span>
+                                <span class="summary-value" id="summaryDefesa">0</span>
+                            </div>
+                            <div class="summary-item">
+                                <span class="summary-label">Disciplina</span>
+                                <span class="summary-value" id="summaryCartoes">Limpo</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="form-actions">
+                        <button type="button" class="btn-secondary" id="cancelBtn">Cancelar</button>
+                        <button type="submit" class="btn">Registrar Estatísticas</button>
+                    </div>
+                </form>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="estatisticas.js"></script>
+</body>
+</html>

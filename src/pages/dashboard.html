@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IScout - Dashboard</title>
+    <link rel="stylesheet" href="../styles/variables.css">
+    <link rel="stylesheet" href="../styles/reset.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/dashboard.css">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-small">⚽</div>
+                    <h1>IScout</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="./dashboard.html" class="nav-link active">Dashboard</a>
+                    <a href="./jogadores.html" class="nav-link">Jogadores</a>
+                    <a href="./historico.html" class="nav-link">Histórico</a>
+                    <a href="./evolucao.html" class="nav-link">Evolução</a>
+                    <a href="./relatorios.html" class="nav-link">Relatórios</a>
+                    <a href="./cadastro-jogador.html" class="nav-link">Cadastrar</a>
+                    <a href="./estatisticas.html" class="nav-link">Estatísticas</a>
+                    <a href="./usuarios.html" class="nav-link">Usuários</a>
+                </nav>
+                <div class="header-right">
+                    <span class="user-name" id="userName">Usuário</span>
+                    <button class="btn-secondary btn-sm" id="logoutBtn">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <!-- Cabeçalho do Dashboard -->
+                <div class="dashboard-header">
+                    <div class="welcome-section">
+                        <h2 id="welcomeMessage">Bem-vindo ao Dashboard</h2>
+                        <p id="welcomeSubtitle">Visão geral do sistema</p>
+                    </div>
+                    <div class="quick-actions" id="quickActions">
+                        <!-- Ações rápidas serão inseridas aqui -->
+                    </div>
+                </div>
+
+                <!-- Cards de Estatísticas Principais -->
+                <div class="stats-overview-grid">
+                    <div class="stat-overview-card">
+                        <div class="stat-icon">👥</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Total de Jogadores</span>
+                            <span class="stat-value" id="totalJogadores">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-overview-card">
+                        <div class="stat-icon">📊</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Eventos Esta Semana</span>
+                            <span class="stat-value" id="eventosEstaSemana">0</span>
+                        </div>
+                    </div>
+                    <div class="stat-overview-card">
+                        <div class="stat-icon">⭐</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Média Geral</span>
+                            <span class="stat-value" id="mediaGeral">0.0</span>
+                        </div>
+                    </div>
+                    <div class="stat-overview-card">
+                        <div class="stat-icon">⚽</div>
+                        <div class="stat-content">
+                            <span class="stat-label">Gols Esta Semana</span>
+                            <span class="stat-value" id="golsEstaSemana">0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grid Principal -->
+                <div class="dashboard-grid">
+                    <!-- Atividade Recente -->
+                    <div class="dashboard-card large-card">
+                        <div class="card-header">
+                            <h3>Atividade Recente</h3>
+                            <span class="card-subtitle">Últimos 7 dias</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container-small">
+                                <canvas id="atividadeChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Melhores Desempenhos -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Melhores Desempenhos</h3>
+                            <span class="card-subtitle">Top 5 jogadores</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="ranking-list" id="topPlayers">
+                                <!-- Lista será preenchida dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Últimos Registros -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Últimos Registros</h3>
+                            <span class="card-subtitle">Estatísticas recentes</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="recent-list" id="recentStats">
+                                <!-- Lista será preenchida dinamicamente -->
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Distribuição por Posição -->
+                    <div class="dashboard-card">
+                        <div class="card-header">
+                            <h3>Jogadores por Posição</h3>
+                            <span class="card-subtitle">Distribuição atual</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container-small">
+                                <canvas id="posicoesChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Desempenho por Categoria -->
+                    <div class="dashboard-card large-card">
+                        <div class="card-header">
+                            <h3>Desempenho por Categoria</h3>
+                            <span class="card-subtitle">Média de notas</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="chart-container-small">
+                                <canvas id="categoriasChart"></canvas>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Alertas e Avisos -->
+                    <div class="dashboard-card" id="alertsCard">
+                        <div class="card-header">
+                            <h3>Alertas</h3>
+                            <span class="card-subtitle">Requer atenção</span>
+                        </div>
+                        <div class="card-body">
+                            <div class="alerts-list" id="alertsList">
+                                <!-- Alertas serão inseridos aqui -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script type="module" src="dashboard.js"></script>
+</body>
+</html>

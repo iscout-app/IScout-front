@@ -1,0 +1,30 @@
+{
+  "name": "iscout",
+  "version": "2.0.0",
+  "module": "src/server.ts",
+  "type": "module",
+  "private": true,
+  "scripts": {
+    "dev": "bun --hot src/server.ts",
+    "start": "bun src/server.ts",
+    "lint": "eslint src/**/*.ts",
+    "format": "prettier --write \"src/**/*.{ts,tsx,css,html}\""
+  },
+  "devDependencies": {
+    "@types/bun": "latest",
+    "@types/node": "^24.10.1",
+    "@typescript-eslint/eslint-plugin": "^8.48.0",
+    "@typescript-eslint/parser": "^8.48.0",
+    "eslint": "^9.39.1",
+    "eslint-config-prettier": "^10.1.8",
+    "prettier": "^3.7.3",
+    "vite": "^7.2.4"
+  },
+  "peerDependencies": {
+    "typescript": "^5"
+  },
+  "dependencies": {
+    "chart.js": "^4.5.1",
+    "toastify-js": "^1.12.0"
+  }
+}

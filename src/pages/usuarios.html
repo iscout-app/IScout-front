@@ -1,0 +1,197 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>IScout - Gerenciar Usuários</title>
+    <link rel="stylesheet" href="../styles/variables.css">
+    <link rel="stylesheet" href="../styles/reset.css">
+    <link rel="stylesheet" href="../styles/components.css">
+    <link rel="stylesheet" href="../styles/usuarios.css">
+</head>
+<body>
+    <div class="app-container">
+        <header class="app-header">
+            <div class="header-content">
+                <div class="header-left">
+                    <div class="logo-small">⚽</div>
+                    <h1>IScout</h1>
+                </div>
+                <nav class="header-nav">
+                    <a href="./dashboard.html" class="nav-link">Dashboard</a>
+                    <a href="./jogadores.html" class="nav-link">Jogadores</a>
+                    <a href="./historico.html" class="nav-link">Histórico</a>
+                    <a href="./evolucao.html" class="nav-link">Evolução</a>
+                    <a href="./relatorios.html" class="nav-link">Relatórios</a>
+                    <a href="./cadastro-jogador.html" class="nav-link">Cadastrar</a>
+                    <a href="./estatisticas.html" class="nav-link">Estatísticas</a>
+                    <a href="./usuarios.html" class="nav-link active">Usuários</a>
+                </nav>
+                <div class="header-right">
+                    <span class="user-name" id="userName">Usuário</span>
+                    <button class="btn-secondary btn-sm" id="logoutBtn">Sair</button>
+                </div>
+            </div>
+        </header>
+
+        <main class="main-content">
+            <div class="content-wrapper">
+                <div class="page-header">
+                    <div class="page-title-section">
+                        <h2>Gerenciar Usuários</h2>
+                        <p class="page-subtitle">Cadastre e gerencie usuários do sistema</p>
+                    </div>
+                    <div class="page-actions">
+                        <button class="btn" id="newUserBtn">+ Novo Usuário</button>
+                    </div>
+                </div>
+
+                <!-- Mensagens -->
+                <div class="success-message" id="successMessage" style="display: none;">
+                    Operação realizada com sucesso!
+                </div>
+
+                <div class="error-message" id="errorMessage" style="display: none;">
+                    Erro ao realizar operação. Tente novamente.
+                </div>
+
+                <!-- Lista de Usuários -->
+                <div class="users-section">
+                    <div class="section-header">
+                        <h3>Usuários Cadastrados</h3>
+                        <span class="users-count" id="usersCount">0 usuários</span>
+                    </div>
+
+                    <div class="users-grid" id="usersGrid">
+                        <!-- Cards de usuários serão inseridos aqui -->
+                    </div>
+
+                    <div class="empty-state" id="emptyState" style="display: none;">
+                        <div class="empty-icon">👥</div>
+                        <h3>Nenhum usuário cadastrado</h3>
+                        <p>Clique no botão acima para cadastrar o primeiro usuário</p>
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- Modal de Cadastro/Edição -->
+    <div class="modal" id="userModal">
+        <div class="modal-overlay" id="modalOverlay"></div>
+        <div class="modal-content">
+            <div class="modal-header">
+                <h3 id="modalTitle">Novo Usuário</h3>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <form id="userForm">
+                    <input type="hidden" id="userId">
+                    
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userNameField">Nome Completo *</label>
+                            <input 
+                                type="text" 
+                                id="userNameField" 
+                                class="form-control" 
+                                placeholder="Nome completo do usuário"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userEmailField">E-mail *</label>
+                            <input 
+                                type="email" 
+                                id="userEmailField" 
+                                class="form-control" 
+                                placeholder="email@exemplo.com"
+                                required
+                            >
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userPasswordField">Senha *</label>
+                            <input 
+                                type="password" 
+                                id="userPasswordField" 
+                                class="form-control" 
+                                placeholder="Mínimo 6 caracteres"
+                                minlength="6"
+                                required
+                            >
+                            <small class="form-hint">Mínimo de 6 caracteres</small>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userType">Tipo de Usuário *</label>
+                            <select id="userType" class="form-control" required>
+                                <option value="">Selecione o tipo...</option>
+                                <option value="tecnico">Técnico</option>
+                                <option value="olheiro">Olheiro</option>
+                                <option value="responsavel">Responsável</option>
+                                <option value="admin">Administrador</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userStatus">Status *</label>
+                            <select id="userStatus" class="form-control" required>
+                                <option value="ativo">Ativo</option>
+                                <option value="inativo">Inativo</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <div class="form-row">
+                        <div class="form-group">
+                            <label class="form-label" for="userPhone">Telefone</label>
+                            <input 
+                                type="tel" 
+                                id="userPhone" 
+                                class="form-control" 
+                                placeholder="(00) 00000-0000"
+                            >
+                        </div>
+                    </div>
+                </form>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="modalCancelBtn">Cancelar</button>
+                <button class="btn" id="modalSaveBtn">Salvar Usuário</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Modal de Confirmação de Exclusão -->
+    <div class="modal" id="deleteModal">
+        <div class="modal-overlay" id="deleteModalOverlay"></div>
+        <div class="modal-content modal-small">
+            <div class="modal-header">
+                <h3>Confirmar Exclusão</h3>
+                <button class="modal-close" id="deleteModalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja excluir este usuário?</p>
+                <p><strong id="deleteUserName"></strong></p>
+                <p class="warning-text">Esta ação não pode ser desfeita.</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn-secondary" id="deleteModalCancelBtn">Cancelar</button>
+                <button class="btn btn-danger" id="deleteModalConfirmBtn">Excluir</button>
+            </div>
+        </div>
+    </div>
+
+    <script type="module" src="usuarios.js"></script>
+</body>
+</html>
