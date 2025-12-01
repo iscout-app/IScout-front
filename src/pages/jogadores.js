@@ -1,43 +1,18 @@
-import { getAuthUser, clearAuthData, requireAuth } from '../utils/auth.js';
-import { canRegisterStats, canCadastrarJogador } from '../utils/permissions.js';
+import { requireAuth } from '../utils/auth.js';
+import { initHeader } from '../components/navbar.js';
+import { filterDataForCurrentUser, canUserPerformAction, hideElementIfNoPermission, isResponsavel } from '../utils/rbac.js';
 
 // Verifica autenticação
 if (!requireAuth()) {
     // Redireciona para login se não autenticado
 }
 
-// Mostra nome do usuário e controla navegação por permissão
-const user = getAuthUser();
-if (user) {
-    document.getElementById('userName').textContent = user.email;
-    
-    // Controle de visibilidade dos links de navegação
-    const estatisticasLink = document.querySelector('a[href="./estatisticas.html"]');
-    const cadastrarLink = document.querySelector('a[href="./cadastro-jogador.html"]');
-    
-    // Esconde link de Estatísticas se não tiver permissão
-    if (estatisticasLink && !canRegisterStats(user.userType)) {
-        estatisticasLink.style.display = 'none';
-    }
-    
-    // Esconde link de Cadastrar se não tiver permissão
-    if (cadastrarLink && !canCadastrarJogador(user.userType)) {
-        cadastrarLink.style.display = 'none';
-    }
-    
-    // Esconde botão "+ Novo Jogador" se não tiver permissão
-    const novoCadastroBtn = document.querySelector('.page-actions .btn');
-    if (novoCadastroBtn && !canCadastrarJogador(user.userType)) {
-        novoCadastroBtn.style.display = 'none';
-    }
-    
-}
+// Inicializa header com navegação dinâmica
+initHeader();
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    clearAuthData();
-    window.location.href = '../index.html';
-});
+// Esconde botão "+ Novo Jogador" se não tiver permissão
+const novoCadastroBtn = document.querySelector('.page-actions .btn');
+hideElementIfNoPermission(novoCadastroBtn, 'create');
 
 // Dados de demonstração dos jogadores
 const mockPlayers = [
@@ -127,17 +102,9 @@ const mockPlayers = [
     }
 ];
 
-// Filtra jogadores baseado no tipo de usuário
+// Filtra jogadores baseado no tipo de usuário usando RBAC
 function getPlayersForUser() {
-    if (!user) return [];
-    
-    // Se for Responsável, mostra apenas jogadores associados a ele
-    if (user.userType === 'responsavel') {
-        return mockPlayers.filter(player => player.emailResponsavel === user.email);
-    }
-    
-    // Técnico, Olheiro e Admin veem todos os jogadores
-    return mockPlayers;
+    return filterDataForCurrentUser(mockPlayers);
 }
 
 let allPlayers = getPlayersForUser();
@@ -168,7 +135,7 @@ function loadPlayers() {
         loadingState.style.display = 'none';
         
         // Atualiza a mensagem do estado vazio se for responsável sem jogadores
-        if (user.userType === 'responsavel' && allPlayers.length === 0) {
+        if (isResponsavel() && allPlayers.length === 0) {
             emptyState.querySelector('h3').textContent = 'Nenhum jogador sob sua responsabilidade';
             emptyState.querySelector('p').textContent = 'Você verá aqui os jogadores cadastrados sob sua responsabilidade';
             const btnCadastro = emptyState.querySelector('.btn');
@@ -328,10 +295,16 @@ function showPlayerDetails(player) {
         </div>
     `;
     
-    editPlayerBtn.onclick = () => {
-        alert(`Funcionalidade de edição será implementada.\nJogador ID: ${player.id}`);
-    };
-    
+    // Controla visibilidade do botão editar baseado em permissões
+    if (canUserPerformAction('edit')) {
+        editPlayerBtn.style.display = 'inline-block';
+        editPlayerBtn.onclick = () => {
+            alert(`Funcionalidade de edição será implementada.\nJogador ID: ${player.id}`);
+        };
+    } else {
+        editPlayerBtn.style.display = 'none';
+    }
+
     playerModal.classList.add('show');
 }
 

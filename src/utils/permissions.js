@@ -1,6 +1,34 @@
 // Controle de permissões baseado no tipo de usuário
 // Baseado nas regras de negócio do documento de requisitos
 
+// Permissões CRUD por role
+export const ROLE_PERMISSIONS = {
+    admin: {
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
+        canViewAll: true,
+    },
+    tecnico: {
+        canCreate: true,
+        canEdit: true,
+        canDelete: true,
+        canViewAll: true,
+    },
+    olheiro: {
+        canCreate: true,
+        canEdit: true,
+        canDelete: false,
+        canViewAll: true,
+    },
+    responsavel: {
+        canCreate: false,
+        canEdit: false,
+        canDelete: false,
+        canViewAll: false,
+    },
+};
+
 export const PERMISSIONS = {
     // Gestão do Sistema (apenas Admin)
     CADASTRAR_USUARIO: ['admin'],

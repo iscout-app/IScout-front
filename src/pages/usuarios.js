@@ -1,40 +1,17 @@
-import { getAuthUser, clearAuthData, requireAuth } from '../utils/auth.js';
-import { canCadastrarUsuario, canRegisterStats, canCadastrarJogador } from '../utils/permissions.js';
+import { requireAuth } from '../utils/auth.js';
+import { initHeader } from '../components/navbar.js';
+import { initPageGuard } from '../utils/rbac.js';
 
 // Verifica autenticação
 if (!requireAuth()) {
     // Redireciona para login se não autenticado
 }
 
-// Mostra nome do usuário e controla navegação
-const user = getAuthUser();
-if (user) {
-    document.getElementById('userName').textContent = user.email;
-    
-    // Controle de visibilidade dos links de navegação
-    const estatisticasLink = document.querySelector('a[href="./estatisticas.html"]');
-    const cadastrarLink = document.querySelector('a[href="./cadastro-jogador.html"]');
-    
-    if (estatisticasLink && !canRegisterStats(user.userType)) {
-        estatisticasLink.style.display = 'none';
-    }
-    
-    if (cadastrarLink && !canCadastrarJogador(user.userType)) {
-        cadastrarLink.style.display = 'none';
-    }
-    
-    // Verifica se é Admin (APENAS admin pode cadastrar usuários)
-    if (!canCadastrarUsuario(user.userType)) {
-        alert('Acesso negado! Apenas Administradores podem gerenciar usuários.');
-        window.location.href = './dashboard.html';
-    }
-}
+// Guard: verifica permissão para cadastrar usuários (apenas admin)
+initPageGuard('CADASTRAR_USUARIO');
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', () => {
-    clearAuthData();
-    window.location.href = '../index.html';
-});
+// Inicializa header com navegação dinâmica
+initHeader();
 
 // Dados mock de usuários
 let mockUsers = [

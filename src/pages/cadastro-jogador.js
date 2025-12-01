@@ -1,33 +1,21 @@
-import { getAuthUser, clearAuthData, requireAuth } from '../utils/auth.js';
+import { requireAuth } from '../utils/auth.js';
 import { http } from '../utils/http.js';
 import API_CONFIG from '../config/api.js';
 import PlayerService from '../services/playerService.js';
 import { showToast } from '../components/toast.js';
+import { initHeader } from '../components/navbar.js';
+import { initPageGuard } from '../utils/rbac.js';
 
 // Verifica autenticação
 if (!requireAuth()) {
     // Redireciona para login se não autenticado
 }
 
-// Mostra nome do usuário
-const user = getAuthUser();
-if (user) {
-    document.getElementById('userName').textContent = user.name || user.email;
-}
+// Guard: verifica permissão para cadastrar jogadores
+initPageGuard('CADASTRAR_JOGADOR');
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    try {
-        await fetch(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.auth.logout}`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
-    clearAuthData();
-    window.location.href = '/index.html';
-});
+// Inicializa header com navegação dinâmica
+initHeader();
 
 // Load teams
 async function loadTeams() {

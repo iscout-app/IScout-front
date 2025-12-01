@@ -1,52 +1,36 @@
-import { getAuthUser, clearAuthData, requireAuth } from '../utils/auth.js';
-import { canRegisterStats, canCadastrarJogador } from '../utils/permissions.js';
+import { requireAuth } from '../utils/auth.js';
 import { http } from '../utils/http.js';
 import API_CONFIG from '../config/api.js';
+import { initHeader } from '../components/navbar.js';
+import { getCurrentUserRole, canUserPerformAction, getRoleDisplayName, isResponsavel } from '../utils/rbac.js';
 
 // Verifica autenticação
 if (!requireAuth()) {
     // Redireciona para login se não autenticado
 }
 
-// Mostra nome do usuário e controla navegação
-const user = getAuthUser();
-if (user) {
-    document.getElementById('userName').textContent = user.name || user.email;
-    
-    // Controle de visibilidade dos links de navegação
-    const estatisticasLink = document.querySelector('a[href="./estatisticas.html"]');
-    const cadastrarLink = document.querySelector('a[href="./cadastro-jogador.html"]');
-    
-    if (estatisticasLink && !canRegisterStats(user.userType)) {
-        estatisticasLink.style.display = 'none';
-    }
-    
-    if (cadastrarLink && !canCadastrarJogador(user.userType)) {
-        cadastrarLink.style.display = 'none';
-    }
-}
+// Inicializa header com navegação dinâmica
+initHeader();
 
-// Logout
-document.getElementById('logoutBtn').addEventListener('click', async () => {
-    try {
-        await fetch(`${API_CONFIG.baseURL}${API_CONFIG.endpoints.auth.logout}`, {
-            method: 'POST',
-            credentials: 'include'
-        });
-    } catch (error) {
-        console.error('Logout error:', error);
-    }
-    clearAuthData();
-    window.location.href = '../index.html';
-});
+// Get user role
+const userRole = getCurrentUserRole();
 
 // Dashboard data
 let dashboardData = null;
+let availablePlayers = [];
+let availableStats = [];
 
 // Load dashboard data from API
 async function loadDashboardData() {
     try {
         dashboardData = await http.get(API_CONFIG.endpoints.dashboard.summary);
+
+        // Extract data from API response
+        if (dashboardData) {
+            availablePlayers = dashboardData.topPerformers || [];
+            availableStats = dashboardData.recentMatches || [];
+        }
+
         return dashboardData;
     } catch (error) {
         console.error('Error loading dashboard data:', error);
@@ -73,47 +57,36 @@ function initDashboard() {
 function renderWelcomeMessage() {
     const welcomeMessage = document.getElementById('welcomeMessage');
     const welcomeSubtitle = document.getElementById('welcomeSubtitle');
-    
-    const userTypeNames = {
-        'admin': 'Administrador',
-        'tecnico': 'Técnico',
-        'olheiro': 'Olheiro',
-        'responsavel': 'Responsável'
-    };
-    
-    const userName = user.email.split('@')[0];
-    const userTypeName = userTypeNames[user.userType] || 'Usuário';
-    
-    welcomeMessage.textContent = `Bem-vindo, ${userTypeName}`;
-    welcomeSubtitle.textContent = `Visão geral ${user.userType === 'responsavel' ? 'dos seus jogadores' : 'do sistema'}`;
+
+    const roleName = getRoleDisplayName(userRole);
+
+    welcomeMessage.textContent = `Bem-vindo, ${roleName}`;
+    welcomeSubtitle.textContent = `Visão geral ${isResponsavel() ? 'dos seus jogadores' : 'do sistema'}`;
 }
 
 // Ações rápidas
 function renderQuickActions() {
     const quickActions = document.getElementById('quickActions');
-    
+
     const actions = [];
-    
-    if (canCadastrarJogador(user.userType)) {
+
+    if (canUserPerformAction('create')) {
         actions.push({
             text: '+ Novo Jogador',
             href: './cadastro-jogador.html'
         });
-    }
-    
-    if (canRegisterStats(user.userType)) {
         actions.push({
             text: '+ Registrar Estatística',
             href: './estatisticas.html'
         });
     }
-    
+
     actions.push({
         text: 'Ver Todos',
         href: './jogadores.html'
     });
-    
-    quickActions.innerHTML = actions.map(action => 
+
+    quickActions.innerHTML = actions.map(action =>
         `<a href="${action.href}" class="quick-action-btn">${action.text}</a>`
     ).join('');
 }
@@ -390,7 +363,7 @@ function renderAlerts() {
     });
     
     // Info sobre sistema
-    if (user.userType === 'admin') {
+    if (userRole === 'admin') {
         alerts.push({
             type: 'info',
             icon: 'ℹ️',
