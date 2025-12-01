@@ -1,67 +1,49 @@
-# ⚽ IScout Frontend v2.0
+# IScout - React + TypeScript
 
-Sistema de Scout de Jovens Jogadores - Frontend moderno com Bun, TypeScript e HMR.
+Sistema de Scout de Jovens Jogadores de Futebol - Versão React Moderna
 
-## 🚀 Quick Start
+## 🚀 Stack Tecnológica
+
+- **Framework:** React 18+ com TypeScript
+- **Build Tool:** Vite
+- **Roteamento:** React Router v6
+- **Estilização:** Tailwind CSS
+- **Componentes UI:** shadcn/ui (Radix UI + Tailwind)
+- **Estado Cliente:** Context API + useState
+- **Estado Servidor:** TanStack Query (React Query)
+- **Forms:** React Hook Form + Zod
+- **HTTP Client:** Axios
+
+## 📦 Instalação
 
 ```bash
-# Instalar dependências
 bun install
-
-# Desenvolvimento (HMR ativo)
-bun run dev
-# → http://localhost:5173
 ```
 
-## ✨ O Que Mudou na v2.0?
-
-###Before (v1.0)
-- ❌ Servidor HTTP simples sem HMR
-- ❌ JavaScript vanilla sem types
-- ❌ Sem ferramentas de desenvolvimento
-
-### Agora (v2.0)
-- ✅ **Bun Server** com Hot Module Replacement
-- ✅ **TypeScript** com tipos completos
-- ✅ **ESLint + Prettier** configurados
-- ✅ **API Proxy** integrado (sem CORS)
-
-## 🛠️ Tech Stack
-
-- **Runtime**: [Bun](https://bun.sh/)
-- **Linguagem**: TypeScript 5.x
-- **Linting**: ESLint + Prettier
-- **Libraries**: Chart.js, Toastify.js
-
-## 📡 API Integration
-
-O servidor inclui proxy automático para o backend:
-
-```
-Frontend: http://localhost:5173
-Backend:  http://localhost:3000
-
-Requests /v1/* → automaticamente proxy para backend
-```
-
-## 🔧 Scripts
+## 🏃‍♂️ Desenvolvimento
 
 ```bash
-bun run dev      # Desenvolvimento com HMR
-bun start        # Produção
-bun run lint     # Verificar código
-bun run format   # Formatar código
+bun run dev
 ```
 
-## 🔑 Credenciais
+Aplicação: http://localhost:5173/
 
-| Role | Email | Senha |
-|------|-------|-------|
-| Admin | admin@iscout.com | admin123 |
-| Técnico | tecnico@iscout.com | tecnico123 |
-| Olheiro | olheiro@iscout.com | olheiro123 |
-| Responsável | responsavel@iscout.com | responsavel123 |
+## 🧪 Credenciais de Teste
 
----
+- **Admin:** admin@iscout.com / password
+- **Técnico:** tecnico@iscout.com / password  
+- **Olheiro:** olheiro@iscout.com / password
+- **Responsável:** responsavel@iscout.com / password
 
-**Versão**: 2.0.0 | **Status**: ✅ Modernizado
+## ✅ Implementado
+
+- Sistema de autenticação (Context API)
+- Sistema RBAC completo
+- React Router com rotas protegidas
+- Layout com Header e Navigation dinâmica
+- Página de Login funcional
+- Todas as páginas placeholder criadas
+
+## 📚 Próximos Passos
+
+Implementar features: Dashboard → Players → Statistics → History → Evolution → Reports → Users
