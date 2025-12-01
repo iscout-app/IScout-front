@@ -1,5 +1,6 @@
 export type Role = 'admin' | 'tecnico' | 'olheiro' | 'responsavel'
 
+// Authentication types
 export interface User {
   id: string
   name: string
@@ -10,8 +11,8 @@ export interface User {
 }
 
 export interface AuthResponse {
-  user: User
-  token?: string
+  success: boolean
+  data: User
 }
 
 export interface LoginCredentials {

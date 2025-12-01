@@ -1,5 +1,5 @@
 import { Link, useLocation } from 'react-router-dom'
-import { Permission } from '@/types/permissions.types'
+import type { Permission } from '@/types/permissions.types'
 import { usePermission } from '@/lib/rbac/hooks'
 import { cn } from '@/lib/utils'
 
@@ -12,7 +12,6 @@ interface NavItem {
 const NAV_ITEMS: NavItem[] = [
   { label: 'Dashboard', href: '/dashboard', permission: null },
   { label: 'Jogadores', href: '/players', permission: 'VISUALIZAR_JOGADORES' },
-  { label: 'Cadastrar', href: '/players/new', permission: 'CADASTRAR_JOGADOR' },
   { label: 'Estatísticas', href: '/statistics', permission: 'REGISTRAR_ESTATISTICA' },
   { label: 'Histórico', href: '/history', permission: 'VISUALIZAR_HISTORICO' },
   { label: 'Evolução', href: '/evolution', permission: 'VISUALIZAR_EVOLUCAO' },

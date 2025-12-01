@@ -1,4 +1,4 @@
-import axios, { AxiosError, InternalAxiosRequestConfig } from 'axios'
+import axios, { AxiosError } from 'axios'
 
 const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
 
@@ -12,7 +12,7 @@ export const apiClient = axios.create({
 
 // Request interceptor
 apiClient.interceptors.request.use(
-  (config: InternalAxiosRequestConfig) => {
+  (config) => {
     // Token is handled by HTTP-only cookies, but we can add other headers here
     return config
   },

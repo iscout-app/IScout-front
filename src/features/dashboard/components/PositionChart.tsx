@@ -1,7 +1,7 @@
 import { Doughnut } from 'react-chartjs-2'
 import { Chart as ChartJS, ArcElement, Tooltip, Legend } from 'chart.js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { PositionDistribution } from '../types/dashboard.types'
+import type { PositionDistribution } from '../types/dashboard.types'
 
 ChartJS.register(ArcElement, Tooltip, Legend)
 

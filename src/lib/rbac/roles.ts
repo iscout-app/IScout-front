@@ -1,4 +1,4 @@
-import { Role, RolePermissions, RolePermissionsMap } from '@/types/permissions.types'
+import type { Role, RolePermissions, RolePermissionsMap } from '@/types/permissions.types'
 
 export const ROLE_PERMISSIONS: RolePermissionsMap = {
   admin: {

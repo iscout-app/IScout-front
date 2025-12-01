@@ -1,15 +1,19 @@
 export interface Player {
   id: string
   name: string
-  birthDate: string
-  position: PlayerPosition
-  category: string
-  height: number
-  weight: number
-  emailResponsavel: string
-  emailTecnico?: string
-  createdAt: string
-  updatedAt: string
+  birthdate: string
+  position: string
+  shirtNumber: number
+  stats: PlayerStats
+  teamId?: string
+}
+
+export interface PlayerStats {
+  matches: number
+  goals: number
+  assists: number
+  yellowCards: number
+  redCards: number
 }
 
 export type PlayerPosition =
@@ -33,22 +37,8 @@ export const PLAYER_POSITIONS: PlayerPosition[] = [
   'Ponta',
 ]
 
-export interface CreatePlayerDto {
-  name: string
-  birthDate: string
-  position: PlayerPosition
-  category: string
-  height: number
-  weight: number
-  emailResponsavel: string
-  emailTecnico?: string
-}
-
-export interface UpdatePlayerDto extends Partial<CreatePlayerDto> {}
-
-export interface PlayerFilters {
-  search?: string
-  position?: PlayerPosition
-  category?: string
-  emailResponsavel?: string
+export interface PlayersFilters {
+  search: string
+  categoria: string
+  posicao: string
 }

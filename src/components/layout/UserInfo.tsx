@@ -1,6 +1,6 @@
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { useRoleDisplayName } from '@/lib/rbac/hooks'
-import { Role } from '@/types/auth.types'
+import type { Role } from '@/types/auth.types'
 import { Badge } from '@/components/ui/badge'
 import { Button } from '@/components/ui/button'
 import { LogOut } from 'lucide-react'
@@ -20,13 +20,13 @@ export function UserInfo() {
   if (!user) return null
 
   return (
-    <div className="flex items-center gap-5">
-      <div className="flex flex-col items-end gap-1">
+    <div className="flex items-center gap-20">
+      <div className="flex flex-col items-end gap-4">
         <span className="text-sm font-semibold text-foreground">{user.name || user.email}</span>
         <Badge
           variant="outline"
           className={cn(
-            'text-[11px] font-semibold uppercase tracking-wide',
+            'text-[11px] font-semibold uppercase tracking-wider border',
             ROLE_COLORS[user.role]
           )}
         >
@@ -38,7 +38,7 @@ export function UserInfo() {
         variant="outline"
         size="sm"
         onClick={logout}
-        className="border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:border-destructive/40"
+        className="border-[1.5px] border-destructive/25 bg-destructive/10 text-destructive hover:bg-destructive/15 hover:border-destructive/40 hover:-translate-y-0.5 transition-transform"
       >
         <LogOut className="mr-2 h-4 w-4" />
         Sair

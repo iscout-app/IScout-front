@@ -1,6 +1,6 @@
 import { ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
-import { Permission } from '@/types/permissions.types'
+import type { Permission } from '@/types/permissions.types'
 import { usePermission } from '@/lib/rbac/hooks'
 
 interface RequirePermissionProps {

@@ -9,7 +9,7 @@ import {
   Legend,
 } from 'chart.js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { CategoryPerformance } from '../types/dashboard.types'
+import type { CategoryPerformance } from '../types/dashboard.types'
 
 ChartJS.register(CategoryScale, LinearScale, BarElement, Title, Tooltip, Legend)
 

@@ -8,8 +8,7 @@ import { lazy } from 'react'
 
 const Login = lazy(() => import('@/features/auth/pages/Login'))
 const Dashboard = lazy(() => import('@/features/dashboard/Dashboard'))
-const PlayersList = lazy(() => import('@/features/players/PlayersList'))
-const PlayerRegistration = lazy(() => import('@/features/players/PlayerRegistration'))
+const PlayersList = lazy(() => import('@/features/players/pages/PlayersList'))
 const StatisticsEntry = lazy(() => import('@/features/statistics/StatisticsEntry'))
 const History = lazy(() => import('@/features/history/History'))
 const Evolution = lazy(() => import('@/features/evolution/Evolution'))
@@ -42,14 +41,6 @@ export const router = createBrowserRouter([
         element: (
           <RequirePermission permission="VISUALIZAR_JOGADORES">
             <PlayersList />
-          </RequirePermission>
-        ),
-      },
-      {
-        path: 'players/new',
-        element: (
-          <RequirePermission permission="CADASTRAR_JOGADOR">
-            <PlayerRegistration />
           </RequirePermission>
         ),
       },

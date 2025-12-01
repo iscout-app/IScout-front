@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { TopPerformer } from '../types/dashboard.types'
+import type { TopPerformer } from '../types/dashboard.types'
 import { Trophy } from 'lucide-react'
 
 interface TopPlayersProps {

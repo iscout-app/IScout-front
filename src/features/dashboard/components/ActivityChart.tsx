@@ -11,7 +11,7 @@ import {
   Filler,
 } from 'chart.js'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ActivityData } from '../types/dashboard.types'
+import type { ActivityData } from '../types/dashboard.types'
 
 ChartJS.register(CategoryScale, LinearScale, PointElement, LineElement, Title, Tooltip, Legend, Filler)
 

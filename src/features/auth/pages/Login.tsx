@@ -7,7 +7,6 @@ import { useAuth } from '../context/AuthContext'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import toast from 'react-hot-toast'
 
 const loginSchema = z.object({
@@ -44,71 +43,103 @@ export default function Login() {
   }
 
   return (
-    <div className="flex min-h-screen items-center justify-center bg-gradient-to-br from-background to-cream-50 p-4">
-      <div className="w-full max-w-md">
+    <div className="min-h-screen flex items-center justify-center p-20 bg-background">
+      <div className="w-full max-w-[420px]">
         {/* Logo Section */}
-        <div className="mb-8 text-center">
-          <div className="mb-4 inline-flex h-20 w-20 items-center justify-center rounded-2xl bg-gradient-to-br from-primary to-teal-700 text-5xl shadow-lg shadow-primary/30">
+        <div className="text-center mb-48">
+          <div className="w-16 h-16 mx-auto mb-16 flex items-center justify-center text-3xl font-bold text-white rounded-lg shadow-lg bg-gradient-to-br from-primary to-teal-700">
             ⚽
           </div>
-          <h1 className="text-3xl font-bold text-foreground">IScout</h1>
-          <p className="mt-2 text-muted-foreground">Sistema de Scout de Jovens Jogadores</p>
+          <h1 className="text-4xl font-bold text-foreground mb-8 tracking-tight">
+            IScout
+          </h1>
+          <p className="text-base font-normal text-muted-foreground">
+            Sistema de Scout de Jovens Jogadores
+          </p>
         </div>
 
-        {/* Login Card */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Entrar</CardTitle>
-            <CardDescription>Digite suas credenciais para acessar o sistema</CardDescription>
-          </CardHeader>
-          <CardContent>
-            <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="seu@email.com"
-                  {...register('email')}
-                  disabled={isLoading}
-                />
-                {errors.email && (
-                  <p className="text-sm text-destructive">{errors.email.message}</p>
-                )}
-              </div>
+      {/* Login Card */}
+      <div className="bg-surface rounded-lg border border-border shadow-md p-32">
+        {/* Login Header */}
+        <div className="text-center mb-32">
+          <h2 className="text-2xl font-semibold text-foreground mb-8">
+            Bem-vindo
+          </h2>
+          <p className="text-base text-muted-foreground">
+            Entre com suas credenciais para acessar o sistema
+          </p>
+        </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="password">Senha</Label>
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder="••••••"
-                  {...register('password')}
-                  disabled={isLoading}
-                />
-                {errors.password && (
-                  <p className="text-sm text-destructive">{errors.password.message}</p>
-                )}
-              </div>
+        {/* Form */}
+        <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Email */}
+          <div className="mb-20">
+            <Label htmlFor="email" className="block text-sm font-medium text-foreground mb-8">
+              E-mail
+            </Label>
+            <Input
+              id="email"
+              type="email"
+              placeholder="seu@email.com"
+              {...register('email')}
+              disabled={isLoading}
+              className="w-full h-100"
+            />
+            {errors.email && (
+              <p className="text-sm text-destructive mt-4">
+                {errors.email.message}
+              </p>
+            )}
+          </div>
 
-              <Button type="submit" className="w-full" disabled={isLoading}>
-                {isLoading ? 'Entrando...' : 'Entrar'}
-              </Button>
-            </form>
+          {/* Password */}
+          <div className="mb-20">
+            <Label htmlFor="password" className="block text-sm font-medium text-foreground mb-8">
+              Senha
+            </Label>
+            <Input
+              id="password"
+              type="password"
+              placeholder="Digite sua senha"
+              {...register('password')}
+              disabled={isLoading}
+              className="w-full h-100"
+            />
+            {errors.password && (
+              <p className="text-sm text-destructive mt-4">
+                {errors.password.message}
+              </p>
+            )}
+          </div>
 
-            {/* Demo Credentials Hint */}
-            <div className="mt-6 rounded-lg border border-muted bg-muted/30 p-4">
-              <p className="text-xs font-semibold text-muted-foreground">Credenciais de teste:</p>
-              <div className="mt-2 space-y-1 text-xs text-muted-foreground">
-                <p>Admin: admin@iscout.com / password</p>
-                <p>Técnico: tecnico@iscout.com / password</p>
-                <p>Olheiro: olheiro@iscout.com / password</p>
-                <p>Responsável: responsavel@iscout.com / password</p>
-              </div>
+          {/* Form Options */}
+          <div className="flex items-center justify-between mb-24 text-sm">
+            <div className="flex items-center gap-8">
+              <input
+                type="checkbox"
+                id="rememberMe"
+                className="w-4 h-4 cursor-pointer accent-primary"
+              />
+              <label htmlFor="rememberMe" className="text-foreground cursor-pointer select-none">
+                Lembrar-me
+              </label>
             </div>
-          </CardContent>
-        </Card>
+            <a href="#" className="text-primary font-medium hover:text-primary-hover transition-colors duration-fast">
+              Esqueceu a senha?
+            </a>
+          </div>
+
+          <Button type="submit" className="w-full h-100" disabled={isLoading}>
+            {isLoading ? 'Entrando...' : 'Entrar'}
+          </Button>
+        </form>
+
+        {/* Footer */}
+        <p className="text-center mt-24 text-sm text-muted-foreground">
+          Escola Oficial do Flamengo - Arapiraca
+        </p>
       </div>
     </div>
+   </div>
   )
 }

@@ -1,24 +1,24 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { playersApi } from '../api/playersApi'
-import { CreatePlayerDto, UpdatePlayerDto, Player } from '../types/player.types'
+import { playersApi, type CreatePlayerDto, type UpdatePlayerDto } from '../api/players.api'
 import toast from 'react-hot-toast'
 
 export const PLAYERS_QUERY_KEY = ['players'] as const
 
-export function usePlayersQuery() {
+export function usePlayersQuery(teamId?: string) {
   return useQuery({
-    queryKey: PLAYERS_QUERY_KEY,
-    queryFn: () => playersApi.getAll(),
+    queryKey: teamId ? [...PLAYERS_QUERY_KEY, teamId] : PLAYERS_QUERY_KEY,
+    queryFn: () => playersApi.getAll(teamId),
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 
-export function usePlayerQuery(id: string) {
+export function usePlayerQuery(id: string, teamId?: string) {
   return useQuery({
-    queryKey: [...PLAYERS_QUERY_KEY, id],
-    queryFn: () => playersApi.getById(id),
+    queryKey: [...PLAYERS_QUERY_KEY, id, teamId],
+    queryFn: () => playersApi.getById(id, teamId),
     enabled: !!id,
-    staleTime: 5 * 60 * 1000,
+    staleTime: 0, // Sempre refetch para garantir dados atualizados
+    retry: 1, // Tentar apenas uma vez em caso de erro
   })
 }
 
@@ -27,7 +27,7 @@ export function useCreatePlayerMutation() {
 
   return useMutation({
     mutationFn: (data: CreatePlayerDto) => playersApi.create(data),
-    onSuccess: (newPlayer) => {
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYERS_QUERY_KEY })
       toast.success('Jogador cadastrado com sucesso!')
     },
@@ -41,11 +41,10 @@ export function useUpdatePlayerMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: ({ id, data }: { id: string; data: UpdatePlayerDto }) =>
-      playersApi.update(id, data),
-    onSuccess: (updatedPlayer) => {
+    mutationFn: ({ id, teamId, data }: { id: string; teamId: string; data: UpdatePlayerDto }) =>
+      playersApi.update(id, teamId, data),
+    onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYERS_QUERY_KEY })
-      queryClient.invalidateQueries({ queryKey: [...PLAYERS_QUERY_KEY, updatedPlayer.id] })
       toast.success('Jogador atualizado com sucesso!')
     },
     onError: (error: Error) => {
@@ -58,7 +57,8 @@ export function useDeletePlayerMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (id: string) => playersApi.delete(id),
+    mutationFn: ({ id, teamId }: { id: string; teamId: string }) =>
+      playersApi.delete(id, teamId),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYERS_QUERY_KEY })
       toast.success('Jogador removido com sucesso!')

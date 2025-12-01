@@ -36,6 +36,7 @@
     "react-hook-form": "^7.67.0",
     "react-hot-toast": "^2.6.0",
     "react-router-dom": "^7.9.6",
+    "recharts": "^3.5.1",
     "tailwind-merge": "^3.4.0",
     "zod": "^4.1.13"
   },
@@ -56,7 +57,7 @@
     "postcss": "^8.5.6",
     "prettier": "^3.7.3",
     "prettier-plugin-tailwindcss": "^0.7.1",
-    "tailwindcss": "^4.1.17",
+    "tailwindcss": "3",
     "tailwindcss-animate": "^1.0.7",
     "typescript": "~5.9.3",
     "typescript-eslint": "^8.46.4",

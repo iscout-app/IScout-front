@@ -1,5 +1,5 @@
 import { Player, PlayerFilters } from '../types/player.types'
-import { User } from '@/types/auth.types'
+import type { User } from '@/types/auth.types'
 
 export function filterPlayersByRole(players: Player[], user: User | null): Player[] {
   if (!user) return []

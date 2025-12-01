@@ -67,7 +67,7 @@ export default function Dashboard() {
         <StatCard
           icon={<TrendingUp className="h-5 w-5 text-green-500" />}
           label="Média Geral"
-          value={data.overallAverage.toFixed(1)}
+          value={data.overallAverage?.toFixed(1) ?? '0.0'}
           subtitle="Desempenho da equipe"
         />
         <StatCard

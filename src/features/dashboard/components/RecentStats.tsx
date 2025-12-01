@@ -1,6 +1,6 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Badge } from '@/components/ui/badge'
-import { RecentMatch } from '../types/dashboard.types'
+import type { RecentMatch } from '../types/dashboard.types'
 import { Calendar, MapPin } from 'lucide-react'
 import { formatDistanceToNow } from 'date-fns'
 import { ptBR } from 'date-fns/locale'

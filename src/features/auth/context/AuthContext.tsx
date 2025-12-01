@@ -1,5 +1,5 @@
 import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
-import { User, AuthContextType, LoginCredentials } from '@/types/auth.types'
+import type { User, AuthContextType, LoginCredentials } from '@/types/auth.types'
 import { authApi } from '../api/authApi'
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined)
@@ -44,8 +44,16 @@ export function AuthProvider({ children }: AuthProviderProps) {
     try {
       const response = await authApi.login(credentials)
 
+      // Validate response structure
+      if (!response.data) {
+        console.error('Invalid API response:', response)
+        throw new Error('Resposta inválida do servidor')
+      }
+
+      console.log('Login successful, user:', response.data)
+
       // Store user data in state and sessionStorage
-      setUser(response.user)
+      setUser(response.data)
 
       // Calculate expiration (e.g., 24 hours from now)
       const expiresAt = new Date()
@@ -54,7 +62,7 @@ export function AuthProvider({ children }: AuthProviderProps) {
       sessionStorage.setItem(
         AUTH_STORAGE_KEY,
         JSON.stringify({
-          user: response.user,
+          user: response.data,
           expiresAt: expiresAt.toISOString(),
         })
       )

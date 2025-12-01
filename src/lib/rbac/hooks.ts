@@ -1,5 +1,5 @@
 import { useAuth } from '@/features/auth/context/AuthContext'
-import { Permission, Action } from '@/types/permissions.types'
+import type { Permission, Action } from '@/types/permissions.types'
 import { hasPermission } from './permissions'
 import { getRolePermissions, getRoleDisplayName } from './roles'
 
