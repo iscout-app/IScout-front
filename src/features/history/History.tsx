@@ -1,70 +1,143 @@
 import { useState, useMemo } from 'react'
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Card, CardContent } from '@/components/ui/card'
+import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
-import { PlayerSelector } from '@/components/shared/PlayerSelector'
-import { usePlayerStatisticsQuery } from '@/features/statistics/hooks/useStatisticsQuery'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
-import { EmptyState } from '@/components/shared/EmptyState'
-import type { MatchStatistics } from '@/features/statistics/types/statistics.types'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { usePlayersQuery, usePlayerQuery } from '@/features/players/hooks/usePlayersQuery'
+import { usePlayerHistoryQuery } from './hooks/useHistoryQuery'
+import { useTeam } from '@/features/teams/context/TeamContext'
+import { Target, Users, BarChart3, Star } from 'lucide-react'
 
-// TODO: Get real teamId from auth context
-const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
+function calculateAge(birthdate: string): number {
+  const birth = new Date(birthdate)
+  const today = new Date()
+  let age = today.getFullYear() - birth.getFullYear()
+  const m = today.getMonth() - birth.getMonth()
+  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
+    age--
+  }
+  return age
+}
 
 export default function History() {
-  const [selectedPlayerId, setSelectedPlayerId] = useState<string>()
+  const { currentTeam } = useTeam()
+  const { data: players } = usePlayersQuery(currentTeam?.id)
+  const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
+  const [eventTypeFilter, setEventTypeFilter] = useState<string>('all')
+  const [periodFilter, setPeriodFilter] = useState<string>('all')
 
-  const { data: playerStats = [], isLoading, isError } = usePlayerStatisticsQuery(selectedPlayerId)
+  const { data: playerData } = usePlayerQuery(selectedPlayerId, currentTeam?.id)
+  const { data: historyData, isLoading } = usePlayerHistoryQuery(currentTeam?.id, selectedPlayerId)
 
-  // Calculate aggregated stats
-  const aggregatedStats = useMemo(() => {
-    if (!playerStats || playerStats.length === 0) return null
+  const selectedPlayer = players?.find((p: any) => p.id === selectedPlayerId)
 
-    const totals = playerStats.reduce(
-      (acc, stat) => ({
-        matches: acc.matches + 1,
-        minutesPlayed: acc.minutesPlayed + (stat.minutesPlayed || 0),
-        goals: acc.goals + stat.goals,
-        assists: acc.assists + stat.assists,
-        shots: acc.shots + (stat.shots || 0),
-        shotsOnTarget: acc.shotsOnTarget + (stat.shotsOnTarget || 0),
-        accuratePasses: acc.accuratePasses + (stat.accuratePasses || 0),
-        inaccuratePasses: acc.inaccuratePasses + (stat.inaccuratePasses || 0),
-        tackles: acc.tackles + (stat.tackles || 0),
-        interceptions: acc.interceptions + (stat.interceptions || 0),
-        yellowCards: acc.yellowCards + stat.yellowCards,
-        redCards: acc.redCards + stat.redCards,
-      }),
-      {
-        matches: 0,
-        minutesPlayed: 0,
-        goals: 0,
-        assists: 0,
-        shots: 0,
-        shotsOnTarget: 0,
-        accuratePasses: 0,
-        inaccuratePasses: 0,
-        tackles: 0,
-        interceptions: 0,
-        yellowCards: 0,
-        redCards: 0,
+  // Combine and process events
+  const allEvents = useMemo(() => {
+    if (!historyData) return []
+
+    const events: any[] = []
+
+    // Process trainings
+    historyData.trainings?.forEach((training: any) => {
+      training.classes?.forEach((trainingClass: any) => {
+        const athleteStats = trainingClass.athletes?.find((a: any) => a.athleteId === selectedPlayerId)
+        if (athleteStats) {
+          events.push({
+            id: `training-${training.id}-${trainingClass.id}`,
+            type: 'treino',
+            date: training.date,
+            title: trainingClass.title,
+            description: trainingClass.description,
+            stats: athleteStats.stats || {},
+            observations: athleteStats.stats?.observations,
+          })
+        }
+      })
+    })
+
+    // Process matches
+    historyData.matches?.forEach((match: any) => {
+      const athletePerformance = match.athletes?.find((a: any) => a.athleteId === selectedPlayerId)
+      if (athletePerformance) {
+        const isHome = match.homeTeamId === currentTeam?.id
+        const score = `${match.homeScore}x${match.awayScore}`
+
+        events.push({
+          id: `match-${match.id}`,
+          type: 'partida',
+          date: match.timestamp,
+          title: `${isHome ? 'Casa' : 'Fora'} - ${score}`,
+          stats: {
+            position: athletePerformance.position,
+            goals: athletePerformance.goals,
+            assists: athletePerformance.assists,
+            yellowCards: athletePerformance.yellowCards,
+            redCards: athletePerformance.redCards,
+          },
+          observations: athletePerformance.observations,
+        })
       }
-    )
+    })
 
-    const totalPasses = totals.accuratePasses + totals.inaccuratePasses
-    const passAccuracy = totalPasses > 0 ? Math.round((totals.accuratePasses / totalPasses) * 100) : 0
+    // Sort by date descending
+    return events.sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+  }, [historyData, selectedPlayerId, currentTeam?.id])
+
+  // Calculate KPIs
+  const kpis = useMemo(() => {
+    if (!selectedPlayer || allEvents.length === 0) {
+      return {
+        totalGoals: 0,
+        totalAssists: 0,
+        totalEvents: 0,
+        avgRating: 0,
+      }
+    }
+
+    let totalGoals = 0
+    let totalAssists = 0
+    let totalRatings = 0
+    let ratingCount = 0
+
+    allEvents.forEach((event) => {
+      totalGoals += event.stats?.goals || 0
+      totalAssists += event.stats?.assists || 0
+
+      if (event.stats?.performanceRating) {
+        totalRatings += event.stats.performanceRating
+        ratingCount++
+      }
+    })
 
     return {
-      ...totals,
-      passAccuracy,
-      avgGoalsPerMatch: totals.matches > 0 ? (totals.goals / totals.matches).toFixed(2) : '0.00',
-      avgAssistsPerMatch: totals.matches > 0 ? (totals.assists / totals.matches).toFixed(2) : '0.00',
-      shotAccuracy:
-        totals.shots > 0 ? Math.round((totals.shotsOnTarget / totals.shots) * 100) : 0,
+      totalGoals,
+      totalAssists,
+      totalEvents: allEvents.length,
+      avgRating: ratingCount > 0 ? (totalRatings / ratingCount).toFixed(1) : '0.0',
     }
-  }, [playerStats])
+  }, [selectedPlayer, allEvents])
 
-  const formatDate = (dateString?: Date) => {
-    if (!dateString) return 'N/A'
+  // Apply filters
+  const filteredEvents = useMemo(() => {
+    let filtered = [...allEvents]
+
+    // Filter by event type
+    if (eventTypeFilter !== 'all') {
+      filtered = filtered.filter((event) => event.type === eventTypeFilter)
+    }
+
+    // Filter by period (TODO: implement date range filtering)
+    // For now, periodFilter is just a placeholder
+
+    return filtered
+  }, [allEvents, eventTypeFilter, periodFilter])
+
+  const clearFilters = () => {
+    setEventTypeFilter('all')
+    setPeriodFilter('all')
+  }
+
+  const formatDate = (dateString: string) => {
     const date = new Date(dateString)
     return date.toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' })
   }
@@ -74,232 +147,268 @@ export default function History() {
       <div>
         <h1 className="text-3xl font-bold tracking-tight">Histórico de Desempenho</h1>
         <p className="mt-8 text-muted-foreground">
-          Timeline de eventos e estatísticas dos jogadores
+          Visualize o histórico detalhado de treinos e partidas
         </p>
       </div>
 
-      {/* Filter Section */}
-      <Card>
-        <CardHeader>
-          <CardTitle>Filtros</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="max-w-md">
-            <Label htmlFor="player-select">Selecione um Jogador</Label>
-            <div className="mt-8">
-              <PlayerSelector
-                value={selectedPlayerId}
-                onChange={setSelectedPlayerId}
-                teamId={TEMP_TEAM_ID}
-                placeholder="Escolha um jogador para ver o histórico..."
-              />
-            </div>
-          </div>
-        </CardContent>
+      {/* Player Selection */}
+      <Card className="p-24">
+        <div className="space-y-8">
+          <Label htmlFor="player-select">Selecione o Jogador</Label>
+          <Select value={selectedPlayerId || undefined} onValueChange={setSelectedPlayerId}>
+            <SelectTrigger id="player-select" className="h-100">
+              <SelectValue placeholder="Escolha um jogador..." />
+            </SelectTrigger>
+            <SelectContent>
+              {players?.map((player: any) => (
+                <SelectItem key={player.id} value={player.id}>
+                  {player.name} - {player.position}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+        </div>
       </Card>
 
-      {/* Loading State */}
-      {isLoading && (
-        <div className="flex justify-center py-12">
-          <LoadingSpinner />
+      {/* Player Info Card */}
+      {selectedPlayer && (
+        <Card className="p-24">
+          <div className="flex items-center gap-16">
+            <div className="flex h-[60px] w-[60px] items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-700 text-2xl font-bold text-white">
+              {selectedPlayer.name
+                .split(' ')
+                .map((n: string) => n[0])
+                .join('')
+                .substring(0, 2)}
+            </div>
+            <div className="flex-1">
+              <h3 className="text-xl font-bold text-foreground">{selectedPlayer.name}</h3>
+              <div className="mt-4 flex items-center gap-16 text-sm text-muted-foreground">
+                <div>
+                  <span className="font-medium">POSIÇÃO</span>
+                  <p className="text-foreground">{selectedPlayer.position}</p>
+                </div>
+                <div>
+                  <span className="font-medium">CATEGORIA</span>
+                  <p className="text-foreground">SUB-{Math.floor(calculateAge(selectedPlayer.birthdate) / 2) * 2 + 1}</p>
+                </div>
+                <div>
+                  <span className="font-medium">IDADE</span>
+                  <p className="text-foreground">{calculateAge(selectedPlayer.birthdate)} anos</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </Card>
+      )}
+
+      {/* Filters */}
+      {selectedPlayer && (
+        <div className="grid gap-16 md:grid-cols-[1fr_1fr_auto]">
+          <div>
+            <Select value={eventTypeFilter} onValueChange={setEventTypeFilter}>
+              <SelectTrigger className="h-100">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todos os Tipos</SelectItem>
+                <SelectItem value="treino">Treinos</SelectItem>
+                <SelectItem value="partida">Partidas</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <div>
+            <Select value={periodFilter} onValueChange={setPeriodFilter}>
+              <SelectTrigger className="h-100">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="all">Todo o Período</SelectItem>
+                <SelectItem value="last7">Últimos 7 dias</SelectItem>
+                <SelectItem value="last30">Últimos 30 dias</SelectItem>
+                <SelectItem value="last90">Últimos 90 dias</SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+          <Button variant="secondary" onClick={clearFilters} className="h-100">
+            Limpar Filtros
+          </Button>
         </div>
       )}
 
-      {/* Error State */}
-      {isError && (
-        <Card>
-          <CardContent className="py-12">
-            <EmptyState
-              title="Erro ao carregar dados"
-              description="Não foi possível carregar o histórico do jogador."
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* No Player Selected */}
-      {!selectedPlayerId && !isLoading && (
-        <Card>
-          <CardContent className="py-12">
-            <EmptyState
-              title="Nenhum jogador selecionado"
-              description="Selecione um jogador acima para visualizar seu histórico de desempenho."
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Empty Stats */}
-      {selectedPlayerId && !isLoading && playerStats && playerStats.length === 0 && (
-        <Card>
-          <CardContent className="py-12">
-            <EmptyState
-              title="Sem estatísticas registradas"
-              description="Este jogador ainda não possui estatísticas registradas."
-            />
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Aggregated Stats Summary */}
-      {aggregatedStats && playerStats && playerStats.length > 0 && (
-        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/8 to-primary/3 shadow-md">
-          <CardHeader className="pb-16">
-            <CardTitle className="text-lg font-bold text-primary">Estatísticas Totais</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid gap-16 md:grid-cols-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Partidas</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.matches}</p>
+      {/* KPI Cards */}
+      {selectedPlayer && filteredEvents.length > 0 && (
+        <div className="grid gap-20 md:grid-cols-2 lg:grid-cols-4">
+          <Card className="p-20">
+            <div className="flex items-center gap-12">
+              <div className="flex h-48 w-48 items-center justify-center rounded-full bg-primary/10">
+                <Target className="h-24 w-24 text-primary" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Gols</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.goals}</p>
-                <p className="text-xs text-muted-foreground">
-                  Média: {aggregatedStats.avgGoalsPerMatch}/partida
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Assistências</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.assists}</p>
-                <p className="text-xs text-muted-foreground">
-                  Média: {aggregatedStats.avgAssistsPerMatch}/partida
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Minutos Jogados</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.minutesPlayed}</p>
+                <p className="text-sm text-muted-foreground">Total de Gols</p>
+                <p className="text-3xl font-bold">{kpis.totalGoals}</p>
               </div>
             </div>
+          </Card>
 
-            <div className="mt-24 grid gap-16 border-t border-primary/20 pt-16 md:grid-cols-4">
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Precisão de Passe</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.passAccuracy}%</p>
+          <Card className="p-20">
+            <div className="flex items-center gap-12">
+              <div className="flex h-48 w-48 items-center justify-center rounded-full bg-destructive/10">
+                <Users className="h-24 w-24 text-destructive" />
               </div>
               <div>
-                <p className="text-sm font-medium text-muted-foreground">Precisão de Finalizações</p>
-                <p className="mt-4 text-2xl font-bold">{aggregatedStats.shotAccuracy}%</p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Ações Defensivas</p>
-                <p className="mt-4 text-2xl font-bold">
-                  {aggregatedStats.tackles + aggregatedStats.interceptions}
-                </p>
-              </div>
-              <div>
-                <p className="text-sm font-medium text-muted-foreground">Cartões</p>
-                <p className="mt-4 text-2xl font-bold">
-                  <span className="text-yellow-600">{aggregatedStats.yellowCards}</span> /{' '}
-                  <span className="text-red-600">{aggregatedStats.redCards}</span>
-                </p>
+                <p className="text-sm text-muted-foreground">Assistências</p>
+                <p className="text-3xl font-bold">{kpis.totalAssists}</p>
               </div>
             </div>
-          </CardContent>
-        </Card>
+          </Card>
+
+          <Card className="p-20">
+            <div className="flex items-center gap-12">
+              <div className="flex h-48 w-48 items-center justify-center rounded-full bg-blue-500/10">
+                <BarChart3 className="h-24 w-24 text-blue-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Partidas/Treinos</p>
+                <p className="text-3xl font-bold">{kpis.totalEvents}</p>
+              </div>
+            </div>
+          </Card>
+
+          <Card className="p-20">
+            <div className="flex items-center gap-12">
+              <div className="flex h-48 w-48 items-center justify-center rounded-full bg-yellow-500/10">
+                <Star className="h-24 w-24 text-yellow-500" />
+              </div>
+              <div>
+                <p className="text-sm text-muted-foreground">Média de Nota</p>
+                <p className="text-3xl font-bold">{kpis.avgRating}</p>
+              </div>
+            </div>
+          </Card>
+        </div>
       )}
 
-      {/* Match History Timeline */}
-      {playerStats && playerStats.length > 0 && (
-        <Card>
-          <CardHeader>
-            <CardTitle>Timeline de Partidas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-16">
-              {playerStats.map((stat: MatchStatistics, index: number) => (
-                <div
-                  key={stat.id || index}
-                  className="flex gap-16 border-l-2 border-primary/30 pl-16 pb-16"
-                >
-                  <div className="flex-shrink-0">
-                    <div className="flex h-32 w-32 items-center justify-center rounded-full bg-primary/20 text-xs font-bold text-primary">
-                      {index + 1}
-                    </div>
-                  </div>
-                  <div className="flex-1">
-                    <div className="mb-8 flex items-start justify-between">
-                      <div>
-                        <h3 className="font-semibold">
-                          Partida - {formatDate(stat.matchDate)}
-                        </h3>
-                        <p className="text-sm text-muted-foreground">
-                          Posição: {stat.position} • {stat.minutesPlayed} minutos
-                        </p>
-                      </div>
-                      {stat.performanceRating !== undefined && (
-                        <div className="rounded-md bg-primary/10 px-12 py-4">
-                          <span className="text-sm font-bold text-primary">
-                            Nota: {(stat.performanceRating / 10).toFixed(1)}
-                          </span>
-                        </div>
+      {/* Timeline */}
+      {selectedPlayer && filteredEvents.length > 0 && (
+        <Card className="p-24">
+          <div className="mb-16">
+            <h3 className="text-lg font-semibold">Linha do Tempo</h3>
+            <p className="text-sm text-muted-foreground">{filteredEvents.length} eventos encontrados</p>
+          </div>
+
+          <div className="relative space-y-24">
+            {filteredEvents.map((event, index) => (
+              <div key={event.id} className="relative flex gap-16">
+                {/* Timeline line */}
+                {index < filteredEvents.length - 1 && (
+                  <div className="absolute left-[8px] top-[40px] bottom-[-24px] w-[2px] bg-border" />
+                )}
+
+                {/* Timeline dot */}
+                <div className="relative flex-shrink-0">
+                  <div className="h-16 w-16 rounded-full bg-primary" />
+                </div>
+
+                {/* Event content */}
+                <div className="flex-1">
+                  <div className="flex items-start justify-between gap-16 mb-8">
+                    <div>
+                      <p className="text-sm font-medium text-muted-foreground">{formatDate(event.date)}</p>
+                      <h4 className="text-lg font-semibold">{event.title}</h4>
+                      {event.description && (
+                        <p className="text-sm text-muted-foreground mt-4">{event.description}</p>
                       )}
                     </div>
+                    <span
+                      className={`rounded px-8 py-4 text-xs font-bold uppercase ${
+                        event.type === 'partida'
+                          ? 'bg-blue-500/10 text-blue-500'
+                          : 'bg-teal-500/10 text-teal-500'
+                      }`}
+                    >
+                      {event.type}
+                    </span>
+                  </div>
 
-                    <div className="grid gap-12 md:grid-cols-4">
+                  {/* Stats */}
+                  <div className="grid gap-12 md:grid-cols-4 mt-12">
+                    {event.stats.goals !== undefined && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Ofensivo</p>
-                        <p className="text-sm font-medium">
-                          {stat.goals} gols • {stat.assists} assistências
-                        </p>
+                        <p className="text-xs text-muted-foreground">⚽ {event.stats.goals} gol(s)</p>
+                      </div>
+                    )}
+                    {event.stats.assists !== undefined && (
+                      <div>
+                        <p className="text-xs text-muted-foreground">🎯 {event.stats.assists} assistência(s)</p>
+                      </div>
+                    )}
+                    {event.stats.accuratePasses !== undefined && (
+                      <div>
                         <p className="text-xs text-muted-foreground">
-                          {stat.shotsOnTarget}/{stat.shots} finalizações
+                          📊 {Math.round(
+                            (event.stats.accuratePasses / (event.stats.accuratePasses + event.stats.inaccuratePasses)) * 100
+                          )}% precisão
                         </p>
                       </div>
+                    )}
+                    {event.stats.performanceRating && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Passes</p>
-                        <p className="text-sm font-medium">
-                          {(stat.accuratePasses || 0) + (stat.inaccuratePasses || 0)} passes
-                        </p>
                         <p className="text-xs text-muted-foreground">
-                          {(stat.accuratePasses || 0) + (stat.inaccuratePasses || 0) > 0
-                            ? Math.round(
-                                ((stat.accuratePasses || 0) /
-                                  ((stat.accuratePasses || 0) + (stat.inaccuratePasses || 0))) *
-                                  100
-                              )
-                            : 0}
-                          % precisão
+                          ⭐ {event.stats.performanceRating.toFixed(1)} nota
                         </p>
                       </div>
+                    )}
+                    {(event.stats.yellowCards > 0 || event.stats.redCards > 0) && (
                       <div>
-                        <p className="text-xs text-muted-foreground">Defesa</p>
-                        <p className="text-sm font-medium">
-                          {stat.tackles} desarmes • {stat.interceptions} interceptações
+                        <p className="text-xs text-muted-foreground">
+                          {event.stats.yellowCards > 0 && `🟨 ${event.stats.yellowCards}`}
+                          {event.stats.yellowCards > 0 && event.stats.redCards > 0 && ' '}
+                          {event.stats.redCards > 0 && `🟥 ${event.stats.redCards}`}
                         </p>
-                      </div>
-                      <div>
-                        <p className="text-xs text-muted-foreground">Disciplina</p>
-                        <p className="text-sm font-medium">
-                          {stat.yellowCards === 0 && stat.redCards === 0 ? (
-                            'Sem cartões'
-                          ) : (
-                            <>
-                              {stat.yellowCards > 0 && (
-                                <span className="text-yellow-600">{stat.yellowCards} amarelo(s)</span>
-                              )}
-                              {stat.yellowCards > 0 && stat.redCards > 0 && ' • '}
-                              {stat.redCards > 0 && (
-                                <span className="text-red-600">{stat.redCards} vermelho(s)</span>
-                              )}
-                            </>
-                          )}
-                        </p>
-                      </div>
-                    </div>
-
-                    {stat.observations && (
-                      <div className="mt-12 rounded-md bg-muted/50 p-12">
-                        <p className="text-xs font-medium text-muted-foreground">Observações:</p>
-                        <p className="mt-4 text-sm">{stat.observations}</p>
                       </div>
                     )}
                   </div>
+
+                  {/* Observations */}
+                  {event.observations && (
+                    <div className="mt-12 rounded-md bg-muted/50 p-12">
+                      <p className="text-xs text-muted-foreground">{event.observations}</p>
+                    </div>
+                  )}
                 </div>
-              ))}
+              </div>
+            ))}
+          </div>
+        </Card>
+      )}
+
+      {/* Empty state */}
+      {!selectedPlayer && (
+        <Card className="p-48">
+          <div className="flex flex-col items-center justify-center gap-16 text-center">
+            <div className="text-6xl opacity-30">📊</div>
+            <div>
+              <h3 className="text-xl font-semibold">Nenhum jogador selecionado</h3>
+              <p className="text-muted-foreground mt-4">
+                Selecione um jogador acima para visualizar seu histórico de desempenho
+              </p>
             </div>
-          </CardContent>
+          </div>
+        </Card>
+      )}
+
+      {selectedPlayer && filteredEvents.length === 0 && !isLoading && (
+        <Card className="p-48">
+          <div className="flex flex-col items-center justify-center gap-16 text-center">
+            <div className="text-6xl opacity-30">📝</div>
+            <div>
+              <h3 className="text-xl font-semibold">Nenhum evento encontrado</h3>
+              <p className="text-muted-foreground mt-4">
+                Este jogador ainda não possui treinos ou partidas registradas
+              </p>
+            </div>
+          </div>
         </Card>
       )}
     </div>

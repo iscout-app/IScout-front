@@ -1,4 +1,5 @@
 import { useEffect } from 'react'
+import { createPortal } from 'react-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -133,15 +134,13 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
 
   if (!isOpen) return null
 
-  return (
-    <div
-      className="fixed inset-0 z-[1000] block"
-      onClick={(e) => {
-        if (e.target === e.currentTarget) onClose()
-      }}
-    >
-      <div className="absolute inset-0 bg-black/50" />
-      <div className="absolute left-1/2 top-1/2 flex max-h-[90vh] w-[90%] max-w-[700px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-lg z-[1001]">
+  return createPortal(
+    <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
+      <div
+        className="absolute inset-0"
+        onClick={onClose}
+      />
+      <div className="relative flex max-h-[90vh] w-[90%] max-w-[700px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-lg z-[1001]">
         {/* Modal Header */}
         <div className="flex items-center justify-between border-b border-border p-24">
           <h3 className="text-xl font-semibold text-foreground">
@@ -269,6 +268,7 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
           )}
         </div>
       </div>
-    </div>
+    </div>,
+    document.body
   )
 }

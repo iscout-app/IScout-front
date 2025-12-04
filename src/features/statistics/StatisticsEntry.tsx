@@ -1,4 +1,4 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
@@ -10,23 +10,27 @@ import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
 import { Textarea } from '@/components/ui/textarea'
 import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
-import { useCreateStatisticsMutation } from './hooks/useStatisticsQuery'
+import { useTeam } from '@/features/teams/context/TeamContext'
+import { useTeamsQuery } from '@/features/teams/hooks/useTeamsQuery'
+import { trainingsApi, matchesApi } from './api/statistics.api'
+import toast from 'react-hot-toast'
+import { useQueryClient } from '@tanstack/react-query'
 
-// Zod schema for statistics form with advanced validations
-const statisticsFormSchema = z.object({
+// Training Form Schema
+const trainingFormSchema = z.object({
   athleteId: z.string().uuid('Jogador é obrigatório'),
-  eventType: z.enum(['treino', 'partida']),
+  eventType: z.literal('treino'),
   eventDate: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
     .refine((date) => {
       const selectedDate = new Date(date)
       const today = new Date()
-      today.setHours(23, 59, 59, 999) // End of today
+      today.setHours(23, 59, 59, 999)
       return selectedDate <= today
     }, 'A data não pode ser no futuro'),
+  trainingTitle: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(255, 'Título muito longo'),
+  trainingDescription: z.string().max(4096, 'Descrição muito longa').optional(),
   minutesPlayed: z.number().int().min(0, 'Minutos não pode ser negativo').max(120, 'Máximo de 120 minutos'),
-  opponent: z.string().optional(),
-  result: z.string().optional(),
   // Offensive stats
   goals: z.number().int().min(0, 'Gols não pode ser negativo'),
   assists: z.number().int().min(0, 'Assistências não pode ser negativo'),
@@ -40,31 +44,47 @@ const statisticsFormSchema = z.object({
   interceptions: z.number().int().min(0, 'Interceptações não pode ser negativo'),
   foulsCommitted: z.number().int().min(0, 'Faltas cometidas não pode ser negativo'),
   foulsSuffered: z.number().int().min(0, 'Faltas sofridas não pode ser negativo'),
-  // Cards
-  yellowCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(2, 'Máximo de 2 cartões amarelos'),
-  redCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(1, 'Máximo de 1 cartão vermelho'),
   // Performance
   performanceRating: z.number().min(0, 'Nota mínima é 0').max(10, 'Nota máxima é 10').optional(),
-  observations: z.string().max(4096, 'Observações muito longas (máximo 4096 caracteres)').optional(),
+  observations: z.string().max(4096, 'Observações muito longas').optional(),
 }).refine((data) => {
-  // Validate shots on target cannot exceed total shots
-  if (data.shotsOnTarget > data.shots) {
-    return false
-  }
+  if (data.shotsOnTarget > data.shots) return false
   return true
 }, {
   message: 'Finalizações no gol não pode ser maior que total de finalizações',
   path: ['shotsOnTarget'],
 })
 
-type StatisticsFormData = z.infer<typeof statisticsFormSchema>
+// Match Form Schema
+const matchFormSchema = z.object({
+  athleteId: z.string().uuid('Jogador é obrigatório'),
+  eventType: z.literal('partida'),
+  eventDate: z.string()
+    .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
+    .refine((date) => {
+      const selectedDate = new Date(date)
+      const today = new Date()
+      today.setHours(23, 59, 59, 999)
+      return selectedDate <= today
+    }, 'A data não pode ser no futuro'),
+  eventTime: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida (formato: HH:MM)'),
+  opponentTeamId: z.string().uuid('Time adversário é obrigatório'),
+  isHomeTeam: z.boolean(),
+  homeScore: z.number().int().min(0, 'Placar não pode ser negativo'),
+  awayScore: z.number().int().min(0, 'Placar não pode ser negativo'),
+  position: z.string().min(1, 'Posição é obrigatória'),
+  goals: z.number().int().min(0, 'Gols não pode ser negativo'),
+  assists: z.number().int().min(0, 'Assistências não pode ser negativo'),
+  yellowCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(2, 'Máximo de 2 cartões amarelos'),
+  redCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(1, 'Máximo de 1 cartão vermelho'),
+  observations: z.string().max(4096, 'Observações muito longas').optional(),
+})
 
-// TODO: Get real teamId from auth context
-const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
-// TODO: Create actual matches instead of using temp matchId
-const TEMP_MATCH_ID = '00000000-0000-0000-0000-000000000000'
+type TrainingFormData = z.infer<typeof trainingFormSchema>
+type MatchFormData = z.infer<typeof matchFormSchema>
+type StatisticsFormData = TrainingFormData | MatchFormData
 
-const defaultFormValues: Partial<StatisticsFormData> = {
+const defaultTrainingValues: Partial<TrainingFormData> = {
   eventDate: new Date().toISOString().split('T')[0],
   minutesPlayed: 90,
   goals: 0,
@@ -77,60 +97,101 @@ const defaultFormValues: Partial<StatisticsFormData> = {
   interceptions: 0,
   foulsCommitted: 0,
   foulsSuffered: 0,
+}
+
+const defaultMatchValues: Partial<MatchFormData> = {
+  eventDate: new Date().toISOString().split('T')[0],
+  eventTime: '15:00',
+  isHomeTeam: true,
+  homeScore: 0,
+  awayScore: 0,
+  goals: 0,
+  assists: 0,
   yellowCards: 0,
   redCards: 0,
 }
 
+const POSITIONS = [
+  { value: 'goleiro', label: 'Goleiro' },
+  { value: 'zagueiro', label: 'Zagueiro' },
+  { value: 'lateral', label: 'Lateral' },
+  { value: 'volante', label: 'Volante' },
+  { value: 'meia', label: 'Meia' },
+  { value: 'atacante', label: 'Atacante' },
+]
+
 export default function StatisticsEntry() {
   const navigate = useNavigate()
-  const { data: players, isLoading: isLoadingPlayers } = usePlayersQuery(TEMP_TEAM_ID)
-  const createMutation = useCreateStatisticsMutation()
+  const queryClient = useQueryClient()
+  const { currentTeam } = useTeam()
+  const { data: players, isLoading: isLoadingPlayers } = usePlayersQuery(currentTeam?.id)
+  const { data: teams, isLoading: isLoadingTeams } = useTeamsQuery()
+  const [eventType, setEventType] = useState<'treino' | 'partida' | ''>('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
 
-  const {
-    register,
-    handleSubmit,
-    setValue,
-    watch,
-    reset,
-    formState: { errors, isSubmitting },
-  } = useForm<StatisticsFormData>({
-    resolver: zodResolver(statisticsFormSchema),
-    defaultValues: defaultFormValues,
+  // Training form
+  const trainingForm = useForm<TrainingFormData>({
+    resolver: zodResolver(trainingFormSchema),
+    defaultValues: defaultTrainingValues as any,
   })
 
-  const selectedPlayer = watch('athleteId')
-  const eventType = watch('eventType')
-  const goals = watch('goals')
-  const assists = watch('assists')
-  const accuratePasses = watch('accuratePasses')
-  const inaccuratePasses = watch('inaccuratePasses')
-  const tackles = watch('tackles')
-  const interceptions = watch('interceptions')
-  const yellowCards = watch('yellowCards')
-  const redCards = watch('redCards')
+  // Match form
+  const matchForm = useForm<MatchFormData>({
+    resolver: zodResolver(matchFormSchema),
+    defaultValues: defaultMatchValues as any,
+  })
 
-  // Calculate pass accuracy
+  // Select the active form based on eventType
+  const activeForm = eventType === 'treino' ? trainingForm : matchForm
+
+  // Watch values for calculations (training only)
+  const trainingAccuratePasses = trainingForm.watch('accuratePasses') || 0
+  const trainingInaccuratePasses = trainingForm.watch('inaccuratePasses') || 0
+  const trainingTackles = trainingForm.watch('tackles') || 0
+  const trainingInterceptions = trainingForm.watch('interceptions') || 0
+
   const passAccuracy = useMemo(() => {
-    const total = accuratePasses + inaccuratePasses
+    const total = trainingAccuratePasses + trainingInaccuratePasses
     if (total === 0) return 0
-    return Math.round((accuratePasses / total) * 100)
-  }, [accuratePasses, inaccuratePasses])
+    return Math.round((trainingAccuratePasses / total) * 100)
+  }, [trainingAccuratePasses, trainingInaccuratePasses])
 
-  // Calculate summary values
-  const goalsAssists = goals + assists
-  const totalPasses = accuratePasses + inaccuratePasses
-  const defensiveActions = tackles + interceptions
-  const disciplineSummary = yellowCards + redCards === 0 ? 'Limpo' : `${yellowCards} amarelo(s), ${redCards} vermelho(s)`
+  const handleEventTypeChange = (newType: 'treino' | 'partida') => {
+    setEventType(newType)
+    // Set eventType in the appropriate form
+    if (newType === 'treino') {
+      trainingForm.setValue('eventType', 'treino')
+    } else {
+      matchForm.setValue('eventType', 'partida')
+    }
+  }
 
-  const onSubmit = async (data: StatisticsFormData) => {
+  const onSubmitTraining = async (data: TrainingFormData) => {
+    if (!currentTeam) {
+      toast.error('Nenhum time selecionado')
+      return
+    }
+
+    setIsSubmitting(true)
     try {
-      const selectedPlayerData = players?.find((p: any) => p.id === data.athleteId)
+      // Step 1: Create training
+      const training = await trainingsApi.createTraining({
+        teamId: currentTeam.id,
+        date: data.eventDate,
+      })
 
-      await createMutation.mutateAsync({
-        athleteId: data.athleteId,
-        matchId: TEMP_MATCH_ID, // TODO: Create actual match
-        teamId: TEMP_TEAM_ID,
-        position: selectedPlayerData?.position || 'N/A',
+      // Step 2: Create training class
+      const trainingClass = await trainingsApi.createTrainingClass(
+        currentTeam.id,
+        training.id,
+        {
+          title: data.trainingTitle,
+          description: data.trainingDescription,
+        }
+      )
+
+      // Step 3: Add athlete stats
+      const stats = {
         minutesPlayed: data.minutesPlayed,
         goals: data.goals,
         assists: data.assists,
@@ -142,25 +203,89 @@ export default function StatisticsEntry() {
         interceptions: data.interceptions,
         foulsCommitted: data.foulsCommitted,
         foulsSuffered: data.foulsSuffered,
-        yellowCards: data.yellowCards,
-        redCards: data.redCards,
-        performanceRating: data.performanceRating ? Math.round(data.performanceRating * 10) : undefined,
+        performanceRating: data.performanceRating,
         observations: data.observations,
-      })
-
-      // Smart reset: preserve player, date, and event type for faster successive entries
-      const preservedValues = {
-        athleteId: data.athleteId,
-        eventDate: data.eventDate,
-        eventType: data.eventType,
       }
 
-      reset({
-        ...defaultFormValues,
-        ...preservedValues,
+      await trainingsApi.addAthleteStats(currentTeam.id, training.id, trainingClass.id, {
+        athleteId: data.athleteId,
+        stats,
       })
-    } catch (error) {
-      console.error('Form submission error:', error)
+
+      toast.success('Treino registrado com sucesso!')
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['players'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+
+      // Smart reset: preserve player and date
+      trainingForm.reset({
+        ...defaultTrainingValues,
+        athleteId: data.athleteId,
+        eventDate: data.eventDate,
+        eventType: 'treino',
+      } as any)
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao registrar treino')
+      console.error('Training submission error:', error)
+    } finally {
+      setIsSubmitting(false)
+    }
+  }
+
+  const onSubmitMatch = async (data: MatchFormData) => {
+    if (!currentTeam) {
+      toast.error('Nenhum time selecionado')
+      return
+    }
+
+    setIsSubmitting(true)
+    try {
+      // Build timestamp from date + time
+      const timestamp = `${data.eventDate}T${data.eventTime}:00.000Z`
+
+      // Determine home and away teams
+      const homeTeamId = data.isHomeTeam ? currentTeam.id : data.opponentTeamId
+      const awayTeamId = data.isHomeTeam ? data.opponentTeamId : currentTeam.id
+
+      // Create match with athlete stats
+      await matchesApi.createMatch({
+        homeTeamId,
+        awayTeamId,
+        timestamp,
+        homeScore: data.homeScore,
+        awayScore: data.awayScore,
+        athletes: [
+          {
+            athleteId: data.athleteId,
+            teamId: currentTeam.id,
+            position: data.position,
+            goals: data.goals,
+            assists: data.assists,
+            yellowCards: data.yellowCards,
+            redCards: data.redCards,
+          },
+        ],
+      })
+
+      toast.success('Partida registrada com sucesso!')
+
+      // Invalidate queries to refresh data
+      await queryClient.invalidateQueries({ queryKey: ['players'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+
+      // Smart reset: preserve player and date
+      matchForm.reset({
+        ...defaultMatchValues,
+        athleteId: data.athleteId,
+        eventDate: data.eventDate,
+        eventType: 'partida',
+      } as any)
+    } catch (error: any) {
+      toast.error(error.message || 'Erro ao registrar partida')
+      console.error('Match submission error:', error)
+    } finally {
+      setIsSubmitting(false)
     }
   }
 
@@ -173,50 +298,28 @@ export default function StatisticsEntry() {
         </p>
       </div>
 
-      <form onSubmit={handleSubmit(onSubmit)} className="space-y-32">
-        {/* Event Information */}
+      <form
+        onSubmit={
+          eventType === 'treino'
+            ? trainingForm.handleSubmit(onSubmitTraining)
+            : matchForm.handleSubmit(onSubmitMatch)
+        }
+        className="space-y-32"
+      >
+        {/* Event Selection */}
         <Card>
           <CardHeader>
-            <CardTitle>Informações do Evento</CardTitle>
+            <CardTitle>Selecione o Tipo de Evento</CardTitle>
           </CardHeader>
           <CardContent className="space-y-16">
             <div className="grid gap-16 md:grid-cols-2">
               <div className="space-y-8">
-                <Label htmlFor="athleteId">Jogador *</Label>
-                <Select
-                  value={selectedPlayer || 'placeholder'}
-                  onValueChange={(value) => value !== 'placeholder' && setValue('athleteId', value)}
-                >
-                  <SelectTrigger id="athleteId" className={`h-100 ${errors.athleteId ? 'border-destructive' : ''}`}>
-                    <SelectValue placeholder="Selecione o jogador..." />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="placeholder" disabled>
-                      Selecione o jogador...
-                    </SelectItem>
-                    {isLoadingPlayers ? (
-                      <SelectItem value="loading" disabled>
-                        Carregando...
-                      </SelectItem>
-                    ) : (
-                      players?.map((player: any) => (
-                        <SelectItem key={player.id} value={player.id}>
-                          {player.name} - #{player.shirtNumber}
-                        </SelectItem>
-                      ))
-                    )}
-                  </SelectContent>
-                </Select>
-                {errors.athleteId && <p className="text-sm text-destructive">{errors.athleteId.message}</p>}
-              </div>
-
-              <div className="space-y-8">
                 <Label htmlFor="eventType">Tipo de Evento *</Label>
                 <Select
                   value={eventType || 'placeholder'}
-                  onValueChange={(value) => value !== 'placeholder' && setValue('eventType', value as 'treino' | 'partida')}
+                  onValueChange={(value) => value !== 'placeholder' && handleEventTypeChange(value as 'treino' | 'partida')}
                 >
-                  <SelectTrigger id="eventType" className={`h-100 ${errors.eventType ? 'border-destructive' : ''}`}>
+                  <SelectTrigger id="eventType" className="h-100">
                     <SelectValue placeholder="Selecione..." />
                   </SelectTrigger>
                   <SelectContent>
@@ -227,268 +330,540 @@ export default function StatisticsEntry() {
                     <SelectItem value="partida">Partida</SelectItem>
                   </SelectContent>
                 </Select>
-                {errors.eventType && <p className="text-sm text-destructive">{errors.eventType.message}</p>}
               </div>
             </div>
+          </CardContent>
+        </Card>
 
-            <div className="grid gap-16 md:grid-cols-2">
-              <div className="space-y-8">
-                <Label htmlFor="eventDate">Data do Evento *</Label>
-                <Input
-                  id="eventDate"
-                  type="date"
-                  {...register('eventDate')}
-                  className={`h-100 ${errors.eventDate ? 'border-destructive' : ''}`}
-                />
-                {errors.eventDate && <p className="text-sm text-destructive">{errors.eventDate.message}</p>}
-              </div>
+        {/* Show form fields only after event type is selected */}
+        {eventType && (
+          <>
+            {/* Player and Date Selection */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Informações Básicas</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-16">
+                <div className="grid gap-16 md:grid-cols-2">
+                  <div className="space-y-8">
+                    <Label htmlFor="athleteId">Jogador *</Label>
+                    <Select
+                      value={activeForm.watch('athleteId') || 'placeholder'}
+                      onValueChange={(value) => value !== 'placeholder' && activeForm.setValue('athleteId', value)}
+                    >
+                      <SelectTrigger
+                        id="athleteId"
+                        className={`h-100 ${activeForm.formState.errors.athleteId ? 'border-destructive' : ''}`}
+                      >
+                        <SelectValue placeholder="Selecione o jogador..." />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="placeholder" disabled>
+                          Selecione o jogador...
+                        </SelectItem>
+                        {isLoadingPlayers ? (
+                          <SelectItem value="loading" disabled>
+                            Carregando...
+                          </SelectItem>
+                        ) : (
+                          players?.map((player: any) => (
+                            <SelectItem key={player.id} value={player.id}>
+                              {player.name} - #{player.shirtNumber}
+                            </SelectItem>
+                          ))
+                        )}
+                      </SelectContent>
+                    </Select>
+                    {activeForm.formState.errors.athleteId && (
+                      <p className="text-sm text-destructive">{activeForm.formState.errors.athleteId.message}</p>
+                    )}
+                  </div>
 
-              <div className="space-y-8">
-                <Label htmlFor="minutesPlayed">Minutos Jogados *</Label>
-                <Input
-                  id="minutesPlayed"
-                  type="number"
-                  {...register('minutesPlayed', { valueAsNumber: true })}
-                  placeholder="90"
-                  min="0"
-                  max="120"
-                  className={`h-100 ${errors.minutesPlayed ? 'border-destructive' : ''}`}
-                />
-                {errors.minutesPlayed && <p className="text-sm text-destructive">{errors.minutesPlayed.message}</p>}
-              </div>
-            </div>
-
-            {eventType === 'partida' && (
-              <div className="grid gap-16 md:grid-cols-2">
-                <div className="space-y-8">
-                  <Label htmlFor="opponent">Adversário</Label>
-                  <Input
-                    id="opponent"
-                    {...register('opponent')}
-                    placeholder="Nome do time adversário"
-                    className="h-100"
-                  />
+                  <div className="space-y-8">
+                    <Label htmlFor="eventDate">Data do Evento *</Label>
+                    <Input
+                      id="eventDate"
+                      type="date"
+                      {...activeForm.register('eventDate')}
+                      className={`h-100 ${activeForm.formState.errors.eventDate ? 'border-destructive' : ''}`}
+                    />
+                    {activeForm.formState.errors.eventDate && (
+                      <p className="text-sm text-destructive">{activeForm.formState.errors.eventDate.message}</p>
+                    )}
+                  </div>
                 </div>
+              </CardContent>
+            </Card>
 
-                <div className="space-y-8">
-                  <Label htmlFor="result">Resultado</Label>
-                  <Input
-                    id="result"
-                    {...register('result')}
-                    placeholder="Ex: 3x2"
-                    className="h-100"
-                  />
-                </div>
-              </div>
+            {/* Training-specific fields */}
+            {eventType === 'treino' && (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Detalhes do Treino</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-16">
+                    <div className="space-y-8">
+                      <Label htmlFor="trainingTitle">Título do Treino *</Label>
+                      <Input
+                        id="trainingTitle"
+                        {...trainingForm.register('trainingTitle')}
+                        placeholder="Ex: Treino Técnico - Finalização"
+                        className={`h-100 ${trainingForm.formState.errors.trainingTitle ? 'border-destructive' : ''}`}
+                      />
+                      {trainingForm.formState.errors.trainingTitle && (
+                        <p className="text-sm text-destructive">{trainingForm.formState.errors.trainingTitle.message}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-8">
+                      <Label htmlFor="trainingDescription">Descrição do Treino</Label>
+                      <Textarea
+                        id="trainingDescription"
+                        {...trainingForm.register('trainingDescription')}
+                        rows={3}
+                        placeholder="Descreva as atividades realizadas no treino..."
+                      />
+                    </div>
+
+                    <div className="space-y-8">
+                      <Label htmlFor="minutesPlayed">Minutos de Participação *</Label>
+                      <Input
+                        id="minutesPlayed"
+                        type="number"
+                        {...trainingForm.register('minutesPlayed', { valueAsNumber: true })}
+                        placeholder="90"
+                        min="0"
+                        max="120"
+                        className={`h-100 ${trainingForm.formState.errors.minutesPlayed ? 'border-destructive' : ''}`}
+                      />
+                      {trainingForm.formState.errors.minutesPlayed && (
+                        <p className="text-sm text-destructive">{trainingForm.formState.errors.minutesPlayed.message}</p>
+                      )}
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Training: Offensive Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estatísticas Ofensivas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-16 md:grid-cols-4">
+                      <div className="space-y-8">
+                        <Label htmlFor="goals">Gols</Label>
+                        <Input
+                          id="goals"
+                          type="number"
+                          {...trainingForm.register('goals', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="assists">Assistências</Label>
+                        <Input
+                          id="assists"
+                          type="number"
+                          {...trainingForm.register('assists', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="shots">Finalizações</Label>
+                        <Input
+                          id="shots"
+                          type="number"
+                          {...trainingForm.register('shots', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="shotsOnTarget">Finalizações no Gol</Label>
+                        <Input
+                          id="shotsOnTarget"
+                          type="number"
+                          {...trainingForm.register('shotsOnTarget', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                        {trainingForm.formState.errors.shotsOnTarget && (
+                          <p className="text-sm text-destructive">
+                            {trainingForm.formState.errors.shotsOnTarget.message}
+                          </p>
+                        )}
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Training: Passing Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estatísticas de Passe</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-16 md:grid-cols-3">
+                      <div className="space-y-8">
+                        <Label htmlFor="accuratePasses">Passes Certos</Label>
+                        <Input
+                          id="accuratePasses"
+                          type="number"
+                          {...trainingForm.register('accuratePasses', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="inaccuratePasses">Passes Errados</Label>
+                        <Input
+                          id="inaccuratePasses"
+                          type="number"
+                          {...trainingForm.register('inaccuratePasses', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="passAccuracy">Precisão (%)</Label>
+                        <Input id="passAccuracy" value={`${passAccuracy}%`} readOnly className="bg-muted h-100" />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Training: Defensive Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estatísticas Defensivas</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-16 md:grid-cols-4">
+                      <div className="space-y-8">
+                        <Label htmlFor="tackles">Desarmes</Label>
+                        <Input
+                          id="tackles"
+                          type="number"
+                          {...trainingForm.register('tackles', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="interceptions">Interceptações</Label>
+                        <Input
+                          id="interceptions"
+                          type="number"
+                          {...trainingForm.register('interceptions', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="foulsCommitted">Faltas Cometidas</Label>
+                        <Input
+                          id="foulsCommitted"
+                          type="number"
+                          {...trainingForm.register('foulsCommitted', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="foulsSuffered">Faltas Sofridas</Label>
+                        <Input
+                          id="foulsSuffered"
+                          type="number"
+                          {...trainingForm.register('foulsSuffered', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Training: Performance */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Avaliação e Observações</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-16">
+                    <div className="space-y-8">
+                      <Label htmlFor="performanceRating">Nota de Desempenho (0-10)</Label>
+                      <Input
+                        id="performanceRating"
+                        type="number"
+                        {...trainingForm.register('performanceRating', { valueAsNumber: true })}
+                        placeholder="7.5"
+                        min="0"
+                        max="10"
+                        step="0.1"
+                        className="h-100"
+                      />
+                    </div>
+
+                    <div className="space-y-8">
+                      <Label htmlFor="observations">Observações do Técnico/Olheiro</Label>
+                      <Textarea
+                        id="observations"
+                        {...trainingForm.register('observations')}
+                        rows={4}
+                        placeholder="Observações sobre o desempenho, pontos fortes, áreas a melhorar..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
             )}
-          </CardContent>
-        </Card>
 
-        {/* Offensive Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estatísticas Ofensivas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-16 md:grid-cols-4">
-              <div className="space-y-8">
-                <Label htmlFor="goals">Gols</Label>
-                <Input id="goals" type="number" {...register('goals', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.goals && <p className="text-sm text-destructive">{errors.goals.message}</p>}
-              </div>
+            {/* Match-specific fields */}
+            {eventType === 'partida' && (
+              <>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Detalhes da Partida</CardTitle>
+                  </CardHeader>
+                  <CardContent className="space-y-16">
+                    <div className="grid gap-16 md:grid-cols-2">
+                      <div className="space-y-8">
+                        <Label htmlFor="eventTime">Horário da Partida *</Label>
+                        <Input
+                          id="eventTime"
+                          type="time"
+                          {...matchForm.register('eventTime')}
+                          className={`h-100 ${matchForm.formState.errors.eventTime ? 'border-destructive' : ''}`}
+                        />
+                        {matchForm.formState.errors.eventTime && (
+                          <p className="text-sm text-destructive">{matchForm.formState.errors.eventTime.message}</p>
+                        )}
+                      </div>
 
-              <div className="space-y-8">
-                <Label htmlFor="assists">Assistências</Label>
-                <Input id="assists" type="number" {...register('assists', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.assists && <p className="text-sm text-destructive">{errors.assists.message}</p>}
-              </div>
+                      <div className="space-y-8">
+                        <Label htmlFor="position">Posição do Jogador *</Label>
+                        <Select
+                          value={matchForm.watch('position') || 'placeholder'}
+                          onValueChange={(value) => value !== 'placeholder' && matchForm.setValue('position', value)}
+                        >
+                          <SelectTrigger
+                            id="position"
+                            className={`h-100 ${matchForm.formState.errors.position ? 'border-destructive' : ''}`}
+                          >
+                            <SelectValue placeholder="Selecione..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="placeholder" disabled>
+                              Selecione...
+                            </SelectItem>
+                            {POSITIONS.map((pos) => (
+                              <SelectItem key={pos.value} value={pos.value}>
+                                {pos.label}
+                              </SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        {matchForm.formState.errors.position && (
+                          <p className="text-sm text-destructive">{matchForm.formState.errors.position.message}</p>
+                        )}
+                      </div>
+                    </div>
 
-              <div className="space-y-8">
-                <Label htmlFor="shots">Finalizações</Label>
-                <Input id="shots" type="number" {...register('shots', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.shots && <p className="text-sm text-destructive">{errors.shots.message}</p>}
-              </div>
+                    <div className="grid gap-16 md:grid-cols-2">
+                      <div className="space-y-8">
+                        <Label htmlFor="opponentTeamId">Time Adversário *</Label>
+                        <Select
+                          value={matchForm.watch('opponentTeamId') || 'placeholder'}
+                          onValueChange={(value) =>
+                            value !== 'placeholder' && matchForm.setValue('opponentTeamId', value)
+                          }
+                        >
+                          <SelectTrigger
+                            id="opponentTeamId"
+                            className={`h-100 ${matchForm.formState.errors.opponentTeamId ? 'border-destructive' : ''}`}
+                          >
+                            <SelectValue placeholder="Selecione o adversário..." />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="placeholder" disabled>
+                              Selecione o adversário...
+                            </SelectItem>
+                            {isLoadingTeams ? (
+                              <SelectItem value="loading" disabled>
+                                Carregando...
+                              </SelectItem>
+                            ) : (
+                              teams
+                                ?.filter((team: any) => team.id !== currentTeam?.id)
+                                .map((team: any) => (
+                                  <SelectItem key={team.id} value={team.id}>
+                                    {team.name}
+                                  </SelectItem>
+                                ))
+                            )}
+                          </SelectContent>
+                        </Select>
+                        {matchForm.formState.errors.opponentTeamId && (
+                          <p className="text-sm text-destructive">
+                            {matchForm.formState.errors.opponentTeamId.message}
+                          </p>
+                        )}
+                      </div>
 
-              <div className="space-y-8">
-                <Label htmlFor="shotsOnTarget">Finalizações no Gol</Label>
-                <Input id="shotsOnTarget" type="number" {...register('shotsOnTarget', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.shotsOnTarget && <p className="text-sm text-destructive">{errors.shotsOnTarget.message}</p>}
-              </div>
+                      <div className="space-y-8">
+                        <Label htmlFor="isHomeTeam">Local da Partida *</Label>
+                        <Select
+                          value={matchForm.watch('isHomeTeam')?.toString() || 'true'}
+                          onValueChange={(value) => matchForm.setValue('isHomeTeam', value === 'true')}
+                        >
+                          <SelectTrigger id="isHomeTeam" className="h-100">
+                            <SelectValue />
+                          </SelectTrigger>
+                          <SelectContent>
+                            <SelectItem value="true">Casa (Mandante)</SelectItem>
+                            <SelectItem value="false">Fora (Visitante)</SelectItem>
+                          </SelectContent>
+                        </Select>
+                      </div>
+                    </div>
+
+                    <div className="grid gap-16 md:grid-cols-2">
+                      <div className="space-y-8">
+                        <Label htmlFor="homeScore">Placar Casa *</Label>
+                        <Input
+                          id="homeScore"
+                          type="number"
+                          {...matchForm.register('homeScore', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className={`h-100 ${matchForm.formState.errors.homeScore ? 'border-destructive' : ''}`}
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="awayScore">Placar Fora *</Label>
+                        <Input
+                          id="awayScore"
+                          type="number"
+                          {...matchForm.register('awayScore', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className={`h-100 ${matchForm.formState.errors.awayScore ? 'border-destructive' : ''}`}
+                        />
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Match: Player Stats */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Estatísticas do Jogador na Partida</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid gap-16 md:grid-cols-4">
+                      <div className="space-y-8">
+                        <Label htmlFor="matchGoals">Gols</Label>
+                        <Input
+                          id="matchGoals"
+                          type="number"
+                          {...matchForm.register('goals', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="matchAssists">Assistências</Label>
+                        <Input
+                          id="matchAssists"
+                          type="number"
+                          {...matchForm.register('assists', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="matchYellowCards">Cartões Amarelos</Label>
+                        <Input
+                          id="matchYellowCards"
+                          type="number"
+                          {...matchForm.register('yellowCards', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          max="2"
+                          className="h-100"
+                        />
+                      </div>
+
+                      <div className="space-y-8">
+                        <Label htmlFor="matchRedCards">Cartões Vermelhos</Label>
+                        <Input
+                          id="matchRedCards"
+                          type="number"
+                          {...matchForm.register('redCards', { valueAsNumber: true })}
+                          placeholder="0"
+                          min="0"
+                          max="1"
+                          className="h-100"
+                        />
+                      </div>
+                    </div>
+
+                    <div className="mt-16 space-y-8">
+                      <Label htmlFor="matchObservations">Observações</Label>
+                      <Textarea
+                        id="matchObservations"
+                        {...matchForm.register('observations')}
+                        rows={4}
+                        placeholder="Observações sobre o desempenho na partida..."
+                      />
+                    </div>
+                  </CardContent>
+                </Card>
+              </>
+            )}
+
+            {/* Form Actions */}
+            <div className="flex justify-end gap-12">
+              <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} disabled={isSubmitting}>
+                Cancelar
+              </Button>
+              <Button type="submit" disabled={isSubmitting || !eventType} className="h-50">
+                {isSubmitting
+                  ? eventType === 'treino'
+                    ? 'Registrando Treino...'
+                    : 'Registrando Partida...'
+                  : eventType === 'treino'
+                    ? 'Registrar Treino'
+                    : 'Registrar Partida'}
+              </Button>
             </div>
-          </CardContent>
-        </Card>
-
-        {/* Passing Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estatísticas de Passe</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-16 md:grid-cols-3">
-              <div className="space-y-8">
-                <Label htmlFor="accuratePasses">Passes Certos</Label>
-                <Input id="accuratePasses" type="number" {...register('accuratePasses', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.accuratePasses && <p className="text-sm text-destructive">{errors.accuratePasses.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="inaccuratePasses">Passes Errados</Label>
-                <Input id="inaccuratePasses" type="number" {...register('inaccuratePasses', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.inaccuratePasses && <p className="text-sm text-destructive">{errors.inaccuratePasses.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="passAccuracy">Precisão (%)</Label>
-                <Input id="passAccuracy" value={`${passAccuracy}%`} readOnly className="bg-muted h-100" />
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Defensive Stats */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Estatísticas Defensivas</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-16 md:grid-cols-4">
-              <div className="space-y-8">
-                <Label htmlFor="tackles">Desarmes</Label>
-                <Input id="tackles" type="number" {...register('tackles', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.tackles && <p className="text-sm text-destructive">{errors.tackles.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="interceptions">Interceptações</Label>
-                <Input id="interceptions" type="number" {...register('interceptions', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.interceptions && <p className="text-sm text-destructive">{errors.interceptions.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="foulsCommitted">Faltas Cometidas</Label>
-                <Input id="foulsCommitted" type="number" {...register('foulsCommitted', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.foulsCommitted && <p className="text-sm text-destructive">{errors.foulsCommitted.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="foulsSuffered">Faltas Sofridas</Label>
-                <Input id="foulsSuffered" type="number" {...register('foulsSuffered', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
-                {errors.foulsSuffered && <p className="text-sm text-destructive">{errors.foulsSuffered.message}</p>}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Cards and Discipline */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Cartões e Disciplina</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="grid gap-16 md:grid-cols-2">
-              <div className="space-y-8">
-                <Label htmlFor="yellowCards">Cartões Amarelos</Label>
-                <Input
-                  id="yellowCards"
-                  type="number"
-                  {...register('yellowCards', { valueAsNumber: true })}
-                  placeholder="0"
-                  min="0"
-                  max="2"
-                  className="h-100"
-                />
-                {errors.yellowCards && <p className="text-sm text-destructive">{errors.yellowCards.message}</p>}
-              </div>
-
-              <div className="space-y-8">
-                <Label htmlFor="redCards">Cartões Vermelhos</Label>
-                <Input
-                  id="redCards"
-                  type="number"
-                  {...register('redCards', { valueAsNumber: true })}
-                  placeholder="0"
-                  min="0"
-                  max="1"
-                  className="h-100"
-                />
-                {errors.redCards && <p className="text-sm text-destructive">{errors.redCards.message}</p>}
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Performance and Observations */}
-        <Card>
-          <CardHeader>
-            <CardTitle>Avaliação e Observações</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-16">
-            <div className="space-y-8">
-              <Label htmlFor="performanceRating">Nota de Desempenho (0-10)</Label>
-              <Input
-                id="performanceRating"
-                type="number"
-                {...register('performanceRating', { valueAsNumber: true })}
-                placeholder="7.5"
-                min="0"
-                max="10"
-                step="0.1"
-                className="h-100"
-              />
-              {errors.performanceRating && <p className="text-sm text-destructive">{errors.performanceRating.message}</p>}
-            </div>
-
-            <div className="space-y-8">
-              <Label htmlFor="observations">Observações do Técnico/Olheiro</Label>
-              <Textarea
-                id="observations"
-                {...register('observations')}
-                rows={4}
-                placeholder="Observações sobre o desempenho, pontos fortes, áreas a melhorar..."
-              />
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Summary */}
-        <Card className="border-2 border-primary/30 bg-gradient-to-br from-primary/8 to-primary/3 shadow-md">
-          <CardHeader className="pb-16">
-            <CardTitle className="text-lg font-bold text-primary">Resumo das Estatísticas</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-0">
-            <div className="grid gap-16 md:grid-cols-4">
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Gols + Assistências</p>
-                <p className="text-2xl font-bold">{goalsAssists}</p>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Total de Passes</p>
-                <p className="text-2xl font-bold">{totalPasses}</p>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Ações Defensivas</p>
-                <p className="text-2xl font-bold">{defensiveActions}</p>
-              </div>
-
-              <div className="space-y-4">
-                <p className="text-sm text-muted-foreground">Disciplina</p>
-                <p className="text-lg font-bold">{disciplineSummary}</p>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-
-        {/* Form Actions */}
-        <div className="flex justify-end gap-12">
-          <Button type="button" variant="secondary" onClick={() => navigate('/jogadores')}>
-            Cancelar
-          </Button>
-          <Button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? 'Registrando...' : 'Registrar Estatísticas'}
-          </Button>
-        </div>
+          </>
+        )}
       </form>
     </div>
   )

@@ -1,78 +1,104 @@
 import { apiClient } from '@/lib/api/client'
-import type {
-  MatchStatistics,
-  CreateStatisticsDto,
-  StatisticsFilters,
 
-  BackendMatchAthlete,
-} from '../types/statistics.types'
-import { RatingCalculator } from '../services/ratingCalculator'
-
-/**
- * Transform backend matchAthlete to frontend MatchStatistics
- */
-function transformMatchAthlete(backend: BackendMatchAthlete): MatchStatistics {
-  const stats: MatchStatistics = {
-    athleteId: backend.athleteId,
-    matchId: backend.matchId,
-    teamId: backend.teamId,
-    position: backend.position,
-    goals: backend.goals,
-    assists: backend.assists,
-    yellowCards: backend.yellowCards,
-    redCards: backend.redCards,
-  }
-
-  // Calculate rating client-side
-  stats.performanceRating = RatingCalculator.calculate(stats)
-
-  return stats
+// Training API Types
+export interface CreateTrainingDto {
+  teamId: string
+  date: string // YYYY-MM-DD format
 }
 
-/**
- * Transform frontend CreateStatisticsDto to backend payload
- * Only send fields that backend supports
- */
-function transformToBackend(data: CreateStatisticsDto): BackendMatchAthlete {
-  return {
-    athleteId: data.athleteId,
-    matchId: data.matchId,
-    teamId: data.teamId,
-    position: data.position,
-    goals: data.goals,
-    assists: data.assists,
-    yellowCards: data.yellowCards,
-    redCards: data.redCards,
-  }
+export interface CreateTrainingClassDto {
+  title: string
+  description?: string
 }
 
-export const statisticsApi = {
-  create: async (data: CreateStatisticsDto) => {
-    // Transform to backend format
-    const backendData = transformToBackend(data)
+export interface AthleteTrainingStatsDto {
+  athleteId: string
+  stats: Record<string, any> // Flexible JSON object for any stats
+}
 
-    // Backend endpoint is part of match creation
-    // For now, we'll use a placeholder endpoint
-    const response = await apiClient.post<BackendMatchAthlete>('/stats', backendData)
+export interface Training {
+  id: string
+  teamId: string
+  date: string
+  createdAt: string
+}
 
-    const result = (response.data as any).data || response.data
-    return transformMatchAthlete(result)
+export interface TrainingClass {
+  id: string
+  trainingId: string
+  title: string
+  description: string | null
+  createdAt: string
+}
+
+// Match API Types
+export interface CreateMatchDto {
+  homeTeamId: string
+  awayTeamId: string
+  timestamp: string // ISO datetime
+  homeScore: number
+  awayScore: number
+  athletes?: Array<{
+    athleteId: string
+    teamId: string
+    position: string
+    goals: number
+    assists: number
+    yellowCards: number
+    redCards: number
+  }>
+}
+
+export interface Match {
+  id: string
+  homeTeamId: string
+  awayTeamId: string
+  timestamp: string
+  homeScore: number
+  awayScore: number
+  createdAt: string
+}
+
+// Training API Methods
+export const trainingsApi = {
+  // Step 1: Create training
+  createTraining: async (data: CreateTrainingDto) => {
+    const response = await apiClient.post<{ success: boolean; data: Training }>(
+      `/teams/${data.teamId}/trainings`,
+      { date: data.date }
+    )
+    return response.data.data
   },
 
-  getByPlayer: async (_athleteId: string) => {
-    // Backend doesn't have this endpoint yet
-    // Would need to fetch all matches and filter by athleteId
-    throw new Error('Consulta de estatísticas por jogador ainda não implementada no backend')
+  // Step 2: Create training class
+  createTrainingClass: async (teamId: string, trainingId: string, data: CreateTrainingClassDto) => {
+    const response = await apiClient.post<{ success: boolean; data: TrainingClass }>(
+      `/teams/${teamId}/trainings/${trainingId}/classes`,
+      data
+    )
+    return response.data.data
   },
 
-  getEvolution: async (_athleteId: string) => {
-    // Backend doesn't have this endpoint yet
-    throw new Error('Evolução de estatísticas ainda não implementada no backend')
+  // Step 3: Add athlete stats to training class
+  addAthleteStats: async (
+    teamId: string,
+    trainingId: string,
+    classId: string,
+    data: AthleteTrainingStatsDto
+  ) => {
+    const response = await apiClient.post(
+      `/teams/${teamId}/trainings/${trainingId}/classes/${classId}/athletes`,
+      data
+    )
+    return response.data
   },
+}
 
-  list: async (_filters?: StatisticsFilters) => {
-    // Backend doesn't have a dedicated stats list endpoint
-    // Statistics are part of match data
-    throw new Error('Listagem de estatísticas ainda não implementada no backend')
+// Match API Methods
+export const matchesApi = {
+  // Create match with athletes
+  createMatch: async (data: CreateMatchDto) => {
+    const response = await apiClient.post<{ success: boolean; data: Match }>('/matches', data)
+    return response.data.data
   },
 }

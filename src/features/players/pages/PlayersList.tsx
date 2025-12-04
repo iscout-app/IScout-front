@@ -1,5 +1,6 @@
 import { useState, useMemo } from 'react'
-import { usePlayersQuery, useDeletePlayerMutation } from '../hooks/usePlayersQuery'
+import { createPortal } from 'react-dom'
+import { usePlayersQuery } from '../hooks/usePlayersQuery'
 import type { Player } from '../types/player.types'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Button } from '@/components/ui/button'
@@ -11,8 +12,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from '@/components/ui/select'
-import { Search, Trash2, Edit } from 'lucide-react'
-import toast from 'react-hot-toast'
+import { Search } from 'lucide-react'
 import { PlayerFormModal } from '../components/PlayerFormModal'
 import { useTeam } from '@/features/teams/context/TeamContext'
 
@@ -30,41 +30,19 @@ function calculateAge(birthdate: string): number {
 export default function PlayersList() {
   const { currentTeam } = useTeam()
   const { data: players, isLoading, error } = usePlayersQuery(currentTeam?.id)
-  const deletePlayerMutation = useDeletePlayerMutation()
 
   const [searchTerm, setSearchTerm] = useState('')
   const [categoriaFilter, setCategoriaFilter] = useState('')
   const [posicaoFilter, setPosicaoFilter] = useState('')
   const [selectedPlayer, setSelectedPlayer] = useState<Player | null>(null)
   const [isFormModalOpen, setIsFormModalOpen] = useState(false)
-  const [editingPlayerId, setEditingPlayerId] = useState<string | null>(null)
-
-  const handleDeletePlayer = (player: Player) => {
-    if (!player.teamId) {
-      toast.error('Não é possível deletar jogador sem time associado')
-      return
-    }
-
-    if (confirm(`Tem certeza que deseja remover ${player.name}?`)) {
-      deletePlayerMutation.mutate({ id: player.id, teamId: player.teamId })
-      setSelectedPlayer(null)
-    }
-  }
 
   const handleOpenCreateModal = () => {
-    setEditingPlayerId(null)
     setIsFormModalOpen(true)
-  }
-
-  const handleOpenEditModal = (playerId: string) => {
-    setEditingPlayerId(playerId)
-    setIsFormModalOpen(true)
-    setSelectedPlayer(null)
   }
 
   const handleCloseFormModal = () => {
     setIsFormModalOpen(false)
-    setEditingPlayerId(null)
   }
 
   const filteredPlayers = useMemo(() => {
@@ -290,15 +268,13 @@ export default function PlayersList() {
       )}
 
       {/* Player Details Modal */}
-      {selectedPlayer && (
-        <div
-          className="fixed inset-0 z-[1000] block"
-          onClick={(e) => {
-            if (e.target === e.currentTarget) setSelectedPlayer(null)
-          }}
-        >
-          <div className="absolute inset-0 bg-black/50" />
-          <div className="absolute left-1/2 top-1/2 flex max-h-[90vh] w-[90%] max-w-[600px] -translate-x-1/2 -translate-y-1/2 flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
+      {selectedPlayer && createPortal(
+        <div className="fixed inset-0 z-[1000] flex items-center justify-center bg-black/50">
+          <div
+            className="absolute inset-0"
+            onClick={() => setSelectedPlayer(null)}
+          />
+          <div className="relative flex max-h-[90vh] w-[90%] max-w-[600px] flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-lg">
             <div className="flex items-center justify-between border-b border-border p-24">
               <h3 className="text-xl font-semibold text-foreground">
                 {selectedPlayer.name}
@@ -415,41 +391,20 @@ export default function PlayersList() {
                 </div>
               </div>
             </div>
-            <div className="flex justify-between gap-12 border-t border-border p-24">
-              <Button
-                variant="destructive"
-                onClick={() => selectedPlayer && handleDeletePlayer(selectedPlayer)}
-                disabled={true}
-                className="h-50 cursor-not-allowed opacity-50"
-                title="Exclusão de jogadores ainda não disponível no backend"
-              >
-                <Trash2 className="mr-2 h-4 w-4" />
-                Remover
+            <div className="flex justify-end gap-12 border-t border-border p-24">
+              <Button variant="secondary" onClick={() => setSelectedPlayer(null)} className="h-50">
+                Fechar
               </Button>
-              <div className="flex gap-12">
-                <Button variant="secondary" onClick={() => setSelectedPlayer(null)} className="h-50">
-                  Fechar
-                </Button>
-                <Button
-                  onClick={() => handleOpenEditModal(selectedPlayer.id)}
-                  disabled={true}
-                  className="h-50 cursor-not-allowed opacity-50"
-                  title="Edição de jogadores ainda não disponível no backend"
-                >
-                  <Edit className="mr-2 h-4 w-4" />
-                  Editar
-                </Button>
-              </div>
             </div>
           </div>
-        </div>
+        </div>,
+        document.body
       )}
 
       {/* Player Form Modal */}
       <PlayerFormModal
         isOpen={isFormModalOpen}
         onClose={handleCloseFormModal}
-        playerId={editingPlayerId}
       />
     </div>
   )
