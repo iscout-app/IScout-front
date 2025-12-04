@@ -7,6 +7,7 @@ import { Layout } from '@/components/layout/Layout'
 import { lazy } from 'react'
 
 const Login = lazy(() => import('@/features/auth/pages/Login'))
+const Register = lazy(() => import('@/features/auth/pages/Register'))
 const Dashboard = lazy(() => import('@/features/dashboard/Dashboard'))
 const PlayersList = lazy(() => import('@/features/players/pages/PlayersList'))
 const StatisticsEntry = lazy(() => import('@/features/statistics/StatisticsEntry'))
@@ -19,6 +20,10 @@ export const router = createBrowserRouter([
   {
     path: '/login',
     element: <Login />,
+  },
+  {
+    path: '/register',
+    element: <Register />,
   },
   {
     path: '/',

@@ -76,7 +76,7 @@ export default function Users() {
             <div className="flex-1 space-y-8">
               <label className="text-sm font-medium">Buscar</label>
               <div className="relative">
-                <Search className="absolute left-12 top-1/2 -translate-y-1/2 h-18 w-18 text-muted-foreground" />
+                <Search className="absolute left-12 top-1/2 -translate-y-1/2 h-20 w-20 text-muted-foreground" />
                 <Input
                   placeholder="Nome ou email..."
                   value={searchTerm}
@@ -120,7 +120,7 @@ export default function Users() {
 
             {/* Create Button */}
             <Button onClick={handleCreateUser} className="h-50">
-              <Plus className="h-18 w-18 mr-8" />
+              <Plus className="h-20 w-20 mr-8" />
               Novo Usuário
             </Button>
           </div>

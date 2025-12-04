@@ -37,7 +37,7 @@ export function DashboardAlerts({ players }: DashboardAlertsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <AlertTriangle className="h-18 w-18 text-yellow-600" />
+          <AlertTriangle className="h-20 w-20 text-yellow-600" />
           Alertas
         </CardTitle>
         <p className="text-sm text-muted-foreground">Requer atenção</p>
@@ -46,7 +46,7 @@ export function DashboardAlerts({ players }: DashboardAlertsProps) {
         <div className="space-y-12">
           {alerts.length === 0 ? (
             <div className="flex items-center gap-12 p-16 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
-              <Info className="h-18 w-18 text-green-600 flex-shrink-0" />
+              <Info className="h-20 w-20 text-green-600 flex-shrink-0" />
               <p className="text-sm text-green-800 dark:text-green-300">
                 Nenhum alerta no momento
               </p>

@@ -14,12 +14,17 @@ import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { USER_ROLE_LABELS } from '@/features/users/types/users.types'
 import { useTeam } from '@/features/teams/context/TeamContext'
+import { PlayerFormModal } from '@/features/players/components/PlayerFormModal'
+import { TeamFormModal } from '@/features/teams/components/TeamFormModal'
+import { useState } from 'react'
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboardQuery()
   const { currentTeam } = useTeam()
   const navigate = useNavigate()
   const { user } = useAuth()
+  const [isPlayerModalOpen, setIsPlayerModalOpen] = useState(false)
+  const [isTeamModalOpen, setIsTeamModalOpen] = useState(false)
 
   if (isLoading) {
     return (
@@ -32,17 +37,29 @@ export default function Dashboard() {
   // Check if user has no team
   if (!currentTeam) {
     return (
-      <div className="flex h-[60vh] items-center justify-center">
-        <div className="text-center space-y-24 max-w-md">
-          <div className="text-6xl">⚽</div>
-          <div>
-            <h2 className="text-2xl font-bold mb-8">Nenhum time cadastrado</h2>
-            <p className="text-muted-foreground mb-24">
-              Você precisa estar vinculado a um time para acessar o dashboard. Entre em contato com o administrador do sistema.
-            </p>
+      <>
+        <div className="flex h-[60vh] items-center justify-center">
+          <div className="text-center space-y-24 max-w-md">
+            <div className="text-6xl">⚽</div>
+            <div>
+              <h2 className="text-2xl font-bold mb-8">Nenhum time cadastrado</h2>
+              <p className="text-muted-foreground mb-24">
+                Você precisa criar um time para acessar o dashboard e começar a gerenciar seus jogadores.
+              </p>
+              <Button onClick={() => setIsTeamModalOpen(true)} className="h-50">
+                <Plus className="h-20 w-20 mr-8" />
+                Criar Meu Time
+              </Button>
+            </div>
           </div>
         </div>
-      </div>
+
+        {/* Team Modal */}
+        <TeamFormModal
+          isOpen={isTeamModalOpen}
+          onClose={() => setIsTeamModalOpen(false)}
+        />
+      </>
     )
   }
 
@@ -79,15 +96,15 @@ export default function Dashboard() {
           </p>
         </div>
         <div className="flex gap-12">
-          <Button onClick={() => navigate('/jogadores/novo')} className="h-50">
-            <Plus className="h-18 w-18 mr-8" />
+          <Button onClick={() => setIsPlayerModalOpen(true)} className="h-50">
+            <Plus className="h-20 w-20 mr-8" />
             Novo Jogador
           </Button>
-          <Button onClick={() => navigate('/estatisticas')} variant="outline" className="h-50">
-            <BarChart3 className="h-18 w-18 mr-8" />
+          <Button onClick={() => navigate('/statistics')} variant="outline" className="h-50">
+            <BarChart3 className="h-20 w-20 mr-8" />
             Registrar Estatística
           </Button>
-          <Button onClick={() => navigate('/jogadores')} variant="outline" className="h-50">
+          <Button onClick={() => navigate('/players')} variant="outline" className="h-50">
             Ver Todos
           </Button>
         </div>
@@ -134,6 +151,12 @@ export default function Dashboard() {
           <DashboardAlerts players={data.topPerformers} />
         </div>
       </div>
+
+      {/* Player Modal */}
+      <PlayerFormModal
+        isOpen={isPlayerModalOpen}
+        onClose={() => setIsPlayerModalOpen(false)}
+      />
     </div>
   )
 }

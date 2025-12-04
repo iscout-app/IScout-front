@@ -26,7 +26,7 @@ export function TopPlayers({ players }: TopPlayersProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Trophy className="h-18 w-18 text-primary" />
+          <Trophy className="h-20 w-20 text-primary" />
           Melhores Desempenhos
         </CardTitle>
         <p className="text-sm text-muted-foreground">Top 5 jogadores</p>

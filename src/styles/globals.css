@@ -114,52 +114,6 @@
   --radius: 8px;
 }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --color-gray-400-rgb: 119, 124, 124;
-    --color-teal-300-rgb: 50, 184, 198;
-    --color-gray-300-rgb: 167, 169, 169;
-    --color-gray-200-rgb: 245, 245, 245;
-
-    --color-background: var(--color-charcoal-700);
-    --color-surface: var(--color-charcoal-800);
-    --color-text: var(--color-gray-200);
-    --color-text-secondary: rgba(var(--color-gray-300-rgb), 0.7);
-    --color-primary: var(--color-teal-300);
-    --color-primary-hover: rgba(45, 166, 178, 1);
-    --color-primary-active: rgba(41, 150, 161, 1);
-    --color-secondary: rgba(var(--color-gray-400-rgb), 0.15);
-    --color-secondary-hover: rgba(var(--color-gray-400-rgb), 0.25);
-    --color-secondary-active: rgba(var(--color-gray-400-rgb), 0.3);
-    --color-border: rgba(var(--color-gray-400-rgb), 0.3);
-    --color-error: var(--color-red-400);
-    --color-success: var(--color-green-400);
-    --color-focus-ring: rgba(var(--color-teal-300-rgb), 0.4);
-    --color-btn-primary-text: rgba(19, 52, 59, 1);
-
-    /* Tailwind/shadcn dark mode */
-    --background: 31 33 33;
-    --foreground: 245 245 245;
-    --card: 38 40 40;
-    --card-foreground: 245 245 245;
-    --popover: 38 40 40;
-    --popover-foreground: 245 245 245;
-    --primary: 50 184 198;
-    --primary-foreground: 31 33 33;
-    --secondary: 98 108 113;
-    --secondary-foreground: 245 245 245;
-    --muted: 98 108 113;
-    --muted-foreground: 167 169 169;
-    --accent: 98 108 113;
-    --accent-foreground: 245 245 245;
-    --destructive: 255 84 89;
-    --destructive-foreground: 245 245 245;
-    --border: 98 108 113;
-    --input: 98 108 113;
-    --ring: 50 184 198;
-  }
-}
-
 @layer base {
   * {
     @apply border-border;

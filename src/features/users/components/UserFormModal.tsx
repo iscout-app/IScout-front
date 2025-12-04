@@ -20,6 +20,7 @@ import {
   SelectValue,
 } from '@/components/ui/select'
 import { useCreateUserMutation } from '../hooks/useUsersQuery'
+import { useQueryClient } from '@tanstack/react-query'
 import type { UserRole, UserStatus } from '../types/users.types'
 import { USER_ROLE_LABELS, USER_STATUS_LABELS } from '../types/users.types'
 
@@ -41,6 +42,7 @@ interface UserFormModalProps {
 
 export function UserFormModal({ isOpen, onClose }: UserFormModalProps) {
   const createMutation = useCreateUserMutation()
+  const queryClient = useQueryClient()
 
   const {
     register,
@@ -89,9 +91,15 @@ export function UserFormModal({ isOpen, onClose }: UserFormModalProps) {
         status: data.status,
         phone: data.phone || undefined,
       })
+
+      // Invalidate queries to refresh users list
+      await queryClient.invalidateQueries({ queryKey: ['users'] })
+
+      // Close modal only on success
       onClose()
     } catch (error) {
-      // Error is handled by mutation
+      // Error is handled by mutation with toast
+      // Modal stays open to allow user to fix errors or retry
       console.error('Error submitting user form:', error)
     }
   }

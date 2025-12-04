@@ -97,12 +97,12 @@ export function CollectiveReportTab() {
               >
                 {isGenerating ? (
                   <>
-                    <Loader2 className="h-18 w-18 mr-8 animate-spin" />
+                    <Loader2 className="h-20 w-20 mr-8 animate-spin" />
                     Gerando PDF...
                   </>
                 ) : (
                   <>
-                    <FileDown className="h-18 w-18 mr-8" />
+                    <FileDown className="h-20 w-20 mr-8" />
                     Gerar Relatório Coletivo
                   </>
                 )}

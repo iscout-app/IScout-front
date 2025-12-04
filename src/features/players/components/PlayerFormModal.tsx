@@ -18,6 +18,7 @@ import {
   useUpdatePlayerMutation,
 } from '../hooks/usePlayersQuery'
 import { useTeam } from '@/features/teams/context/TeamContext'
+import { useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
 // Zod schema for player form
@@ -48,6 +49,7 @@ interface PlayerFormModalProps {
 export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalProps) {
   const isEditMode = !!playerId
   const { currentTeam } = useTeam()
+  const queryClient = useQueryClient()
 
   const { data: player, isLoading: isLoadingPlayer } = usePlayerQuery(
     playerId || '',
@@ -115,9 +117,16 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
           },
         })
       }
+
+      // Invalidate queries to refresh dashboard and players list
+      await queryClient.invalidateQueries({ queryKey: ['players'] })
+      await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+
+      // Close modal only on success
       onClose()
     } catch (error) {
       // Error is handled by mutation hooks with toast
+      // Modal stays open to allow user to fix errors or retry
       console.error('Form submission error:', error)
     }
   }

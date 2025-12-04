@@ -14,7 +14,7 @@ export function RecentStats({ matches }: RecentStatsProps) {
     <Card>
       <CardHeader>
         <CardTitle className="flex items-center gap-2 text-base">
-          <Calendar className="h-18 w-18 text-primary" />
+          <Calendar className="h-20 w-20 text-primary" />
           Últimos Registros
         </CardTitle>
         <p className="text-sm text-muted-foreground">Estatísticas recentes</p>

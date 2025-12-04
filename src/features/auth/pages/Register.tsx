@@ -3,41 +3,48 @@ import { useNavigate } from 'react-router-dom'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
-import { useAuth } from '../context/AuthContext'
+import { authApi } from '../api/authApi'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { Checkbox } from '@/components/ui/checkbox'
 import toast from 'react-hot-toast'
 
-const loginSchema = z.object({
+const registerSchema = z.object({
+  name: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome muito longo'),
   email: z.string().email('Email inválido').min(1, 'Email é obrigatório'),
   password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres'),
+  confirmPassword: z.string().min(8, 'Confirmação de senha obrigatória'),
+}).refine((data) => data.password === data.confirmPassword, {
+  message: 'As senhas não coincidem',
+  path: ['confirmPassword'],
 })
 
-type LoginFormData = z.infer<typeof loginSchema>
+type RegisterFormData = z.infer<typeof registerSchema>
 
-export default function Login() {
+export default function Register() {
   const navigate = useNavigate()
-  const { login } = useAuth()
   const [isLoading, setIsLoading] = useState(false)
 
   const {
     register,
     handleSubmit,
     formState: { errors },
-  } = useForm<LoginFormData>({
-    resolver: zodResolver(loginSchema),
+  } = useForm<RegisterFormData>({
+    resolver: zodResolver(registerSchema),
   })
 
-  const onSubmit = async (data: LoginFormData) => {
+  const onSubmit = async (data: RegisterFormData) => {
     setIsLoading(true)
     try {
-      await login(data)
-      toast.success('Login realizado com sucesso!')
-      navigate('/dashboard')
+      await authApi.register({
+        name: data.name,
+        email: data.email,
+        password: data.password,
+      })
+      toast.success('Conta criada com sucesso! Faça login para continuar.')
+      navigate('/login')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao fazer login')
+      toast.error(error instanceof Error ? error.message : 'Erro ao criar conta')
     } finally {
       setIsLoading(false)
     }
@@ -59,20 +66,40 @@ export default function Login() {
           </p>
         </div>
 
-      {/* Login Card */}
+      {/* Register Card */}
       <div className="bg-surface rounded-lg border border-border shadow-md p-32">
-        {/* Login Header */}
+        {/* Register Header */}
         <div className="text-center mb-32">
           <h2 className="text-2xl font-semibold text-foreground mb-8">
-            Bem-vindo
+            Criar Conta
           </h2>
           <p className="text-base text-muted-foreground">
-            Entre com suas credenciais para acessar o sistema
+            Preencha os dados abaixo para criar sua conta
           </p>
         </div>
 
         {/* Form */}
         <form onSubmit={handleSubmit(onSubmit)}>
+          {/* Name */}
+          <div className="mb-20">
+            <Label htmlFor="name" className="block text-sm font-medium text-foreground mb-8">
+              Nome Completo
+            </Label>
+            <Input
+              id="name"
+              type="text"
+              placeholder="Seu nome completo"
+              {...register('name')}
+              disabled={isLoading}
+              className="w-full h-100"
+            />
+            {errors.name && (
+              <p className="text-sm text-destructive mt-4">
+                {errors.name.message}
+              </p>
+            )}
+          </div>
+
           {/* Email */}
           <div className="mb-20">
             <Label htmlFor="email" className="block text-sm font-medium text-foreground mb-8">
@@ -101,7 +128,7 @@ export default function Login() {
             <Input
               id="password"
               type="password"
-              placeholder="Digite sua senha"
+              placeholder="Mínimo 8 caracteres"
               {...register('password')}
               disabled={isLoading}
               className="w-full h-100"
@@ -113,38 +140,40 @@ export default function Login() {
             )}
           </div>
 
-          {/* Form Options */}
-          <div className="flex items-center justify-between mb-24 text-sm">
-            <div className="flex items-center gap-8">
-              <Checkbox id="rememberMe" className="w-18 h-18" />
-              <label htmlFor="rememberMe" className="text-foreground cursor-pointer select-none">
-                Lembrar-me
-              </label>
-            </div>
-            <a href="#" className="text-primary font-medium hover:text-primary-hover transition-colors duration-fast">
-              Esqueceu a senha?
-            </a>
+          {/* Confirm Password */}
+          <div className="mb-24">
+            <Label htmlFor="confirmPassword" className="block text-sm font-medium text-foreground mb-8">
+              Confirmar Senha
+            </Label>
+            <Input
+              id="confirmPassword"
+              type="password"
+              placeholder="Digite a senha novamente"
+              {...register('confirmPassword')}
+              disabled={isLoading}
+              className="w-full h-100"
+            />
+            {errors.confirmPassword && (
+              <p className="text-sm text-destructive mt-4">
+                {errors.confirmPassword.message}
+              </p>
+            )}
           </div>
 
           <Button type="submit" className="w-full h-100" disabled={isLoading}>
-            {isLoading ? 'Entrando...' : 'Entrar'}
+            {isLoading ? 'Criando conta...' : 'Criar Conta'}
           </Button>
         </form>
 
-        {/* Footer - Link to Register */}
+        {/* Footer - Link to Login */}
         <p className="text-center mt-24 text-sm text-foreground">
-          Não tem uma conta?{' '}
+          Já tem uma conta?{' '}
           <a
-            href="/register"
+            href="/login"
             className="text-primary font-medium hover:text-primary-hover transition-colors duration-fast"
           >
-            Criar conta
+            Fazer login
           </a>
-        </p>
-
-        {/* Organization Footer */}
-        <p className="text-center mt-16 text-sm text-muted-foreground">
-          Escola Oficial do Flamengo - Arapiraca
         </p>
       </div>
     </div>

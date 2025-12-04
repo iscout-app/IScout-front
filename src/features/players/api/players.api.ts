@@ -15,7 +15,7 @@ export interface UpdatePlayerDto {
   shirtNumber?: number
 }
 
-// Backend athlete structure from athleteCareer (nested format from GET)
+// Backend athlete structure from athleteCareer (nested format from GET - OLD FORMAT)
 interface AthleteCareerResponse {
   athleteId: string
   teamId: string
@@ -34,6 +34,21 @@ interface AthleteCareerResponse {
     name: string
     birthdate: string
   }
+}
+
+// Backend athlete structure from GET /teams/:id/athletes (flat format - NEW FORMAT)
+interface AthleteFlatResponse {
+  athleteId: string
+  teamId: string
+  name: string
+  birthdate: string
+  position: string
+  shirtNumber: number
+  goals: number
+  assists: number
+  redCards: number
+  yellowCards: number
+  matches: number
 }
 
 // Backend athlete structure from create (flat format from POST)
@@ -56,8 +71,10 @@ interface AthleteCreateResponse {
 }
 
 // Transform backend athlete to frontend player
-function transformAthleteToPlayer(athleteCareer: AthleteCareerResponse | AthleteCreateResponse): Player {
-  // Check if it's the nested format (GET) or flat format (POST)
+function transformAthleteToPlayer(
+  athleteCareer: AthleteCareerResponse | AthleteFlatResponse | AthleteCreateResponse
+): Player {
+  // Check if it's the nested format (GET OLD) or flat format (GET NEW / POST)
   const isNested = 'athlete' in athleteCareer && athleteCareer.athlete !== undefined
 
   if (isNested) {
@@ -78,9 +95,12 @@ function transformAthleteToPlayer(athleteCareer: AthleteCareerResponse | Athlete
       },
     }
   } else {
-    const flat = athleteCareer as AthleteCreateResponse
+    // Handle both flat GET response and POST response
+    const flat = athleteCareer as AthleteFlatResponse | AthleteCreateResponse
+    const id = 'athleteId' in flat ? flat.athleteId : (flat as AthleteCreateResponse).id
+
     return {
-      id: flat.id,
+      id,
       name: flat.name,
       birthdate: flat.birthdate,
       position: flat.position,
@@ -99,7 +119,7 @@ function transformAthleteToPlayer(athleteCareer: AthleteCareerResponse | Athlete
 
 export const playersApi = {
   getAll: async (teamId: string) => {
-    const response = await apiClient.get<AthleteCareerResponse[]>(
+    const response = await apiClient.get<(AthleteCareerResponse | AthleteFlatResponse)[]>(
       `/teams/${teamId}/athletes`
     )
 
