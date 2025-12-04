@@ -1,7 +1,8 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useMemo } from 'react'
 import { useForm } from 'react-hook-form'
 import { zodResolver } from '@hookform/resolvers/zod'
 import { z } from 'zod'
+import { useNavigate } from 'react-router-dom'
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -14,7 +15,7 @@ import { useCreateStatisticsMutation } from './hooks/useStatisticsQuery'
 // Zod schema for statistics form with advanced validations
 const statisticsFormSchema = z.object({
   athleteId: z.string().uuid('Jogador é obrigatório'),
-  eventType: z.enum(['treino', 'partida'], { required_error: 'Tipo de evento é obrigatório' }),
+  eventType: z.enum(['treino', 'partida']),
   eventDate: z.string()
     .regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida')
     .refine((date) => {
@@ -23,27 +24,27 @@ const statisticsFormSchema = z.object({
       today.setHours(23, 59, 59, 999) // End of today
       return selectedDate <= today
     }, 'A data não pode ser no futuro'),
-  minutesPlayed: z.coerce.number().int().min(0, 'Minutos não pode ser negativo').max(120, 'Máximo de 120 minutos'),
+  minutesPlayed: z.number().int().min(0, 'Minutos não pode ser negativo').max(120, 'Máximo de 120 minutos'),
   opponent: z.string().optional(),
   result: z.string().optional(),
   // Offensive stats
-  goals: z.coerce.number().int().min(0, 'Gols não pode ser negativo').default(0),
-  assists: z.coerce.number().int().min(0, 'Assistências não pode ser negativo').default(0),
-  shots: z.coerce.number().int().min(0, 'Finalizações não pode ser negativo').default(0),
-  shotsOnTarget: z.coerce.number().int().min(0, 'Finalizações no gol não pode ser negativo').default(0),
+  goals: z.number().int().min(0, 'Gols não pode ser negativo'),
+  assists: z.number().int().min(0, 'Assistências não pode ser negativo'),
+  shots: z.number().int().min(0, 'Finalizações não pode ser negativo'),
+  shotsOnTarget: z.number().int().min(0, 'Finalizações no gol não pode ser negativo'),
   // Passing stats
-  accuratePasses: z.coerce.number().int().min(0, 'Passes certos não pode ser negativo').default(0),
-  inaccuratePasses: z.coerce.number().int().min(0, 'Passes errados não pode ser negativo').default(0),
+  accuratePasses: z.number().int().min(0, 'Passes certos não pode ser negativo'),
+  inaccuratePasses: z.number().int().min(0, 'Passes errados não pode ser negativo'),
   // Defensive stats
-  tackles: z.coerce.number().int().min(0, 'Desarmes não pode ser negativo').default(0),
-  interceptions: z.coerce.number().int().min(0, 'Interceptações não pode ser negativo').default(0),
-  foulsCommitted: z.coerce.number().int().min(0, 'Faltas cometidas não pode ser negativo').default(0),
-  foulsSuffered: z.coerce.number().int().min(0, 'Faltas sofridas não pode ser negativo').default(0),
+  tackles: z.number().int().min(0, 'Desarmes não pode ser negativo'),
+  interceptions: z.number().int().min(0, 'Interceptações não pode ser negativo'),
+  foulsCommitted: z.number().int().min(0, 'Faltas cometidas não pode ser negativo'),
+  foulsSuffered: z.number().int().min(0, 'Faltas sofridas não pode ser negativo'),
   // Cards
-  yellowCards: z.coerce.number().int().min(0, 'Cartões não pode ser negativo').max(2, 'Máximo de 2 cartões amarelos').default(0),
-  redCards: z.coerce.number().int().min(0, 'Cartões não pode ser negativo').max(1, 'Máximo de 1 cartão vermelho').default(0),
+  yellowCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(2, 'Máximo de 2 cartões amarelos'),
+  redCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(1, 'Máximo de 1 cartão vermelho'),
   // Performance
-  performanceRating: z.coerce.number().min(0, 'Nota mínima é 0').max(10, 'Nota máxima é 10').step(0.1).optional(),
+  performanceRating: z.number().min(0, 'Nota mínima é 0').max(10, 'Nota máxima é 10').optional(),
   observations: z.string().max(4096, 'Observações muito longas (máximo 4096 caracteres)').optional(),
 }).refine((data) => {
   // Validate shots on target cannot exceed total shots
@@ -63,7 +64,25 @@ const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
 // TODO: Create actual matches instead of using temp matchId
 const TEMP_MATCH_ID = '00000000-0000-0000-0000-000000000000'
 
+const defaultFormValues: Partial<StatisticsFormData> = {
+  eventDate: new Date().toISOString().split('T')[0],
+  minutesPlayed: 90,
+  goals: 0,
+  assists: 0,
+  shots: 0,
+  shotsOnTarget: 0,
+  accuratePasses: 0,
+  inaccuratePasses: 0,
+  tackles: 0,
+  interceptions: 0,
+  foulsCommitted: 0,
+  foulsSuffered: 0,
+  yellowCards: 0,
+  redCards: 0,
+}
+
 export default function StatisticsEntry() {
+  const navigate = useNavigate()
   const { data: players, isLoading: isLoadingPlayers } = usePlayersQuery(TEMP_TEAM_ID)
   const createMutation = useCreateStatisticsMutation()
 
@@ -76,22 +95,7 @@ export default function StatisticsEntry() {
     formState: { errors, isSubmitting },
   } = useForm<StatisticsFormData>({
     resolver: zodResolver(statisticsFormSchema),
-    defaultValues: {
-      eventDate: new Date().toISOString().split('T')[0],
-      minutesPlayed: 90,
-      goals: 0,
-      assists: 0,
-      shots: 0,
-      shotsOnTarget: 0,
-      accuratePasses: 0,
-      inaccuratePasses: 0,
-      tackles: 0,
-      interceptions: 0,
-      foulsCommitted: 0,
-      foulsSuffered: 0,
-      yellowCards: 0,
-      redCards: 0,
-    },
+    defaultValues: defaultFormValues,
   })
 
   const selectedPlayer = watch('athleteId')
@@ -144,7 +148,17 @@ export default function StatisticsEntry() {
         observations: data.observations,
       })
 
-      reset()
+      // Smart reset: preserve player, date, and event type for faster successive entries
+      const preservedValues = {
+        athleteId: data.athleteId,
+        eventDate: data.eventDate,
+        eventType: data.eventType,
+      }
+
+      reset({
+        ...defaultFormValues,
+        ...preservedValues,
+      })
     } catch (error) {
       console.error('Form submission error:', error)
     }
@@ -234,7 +248,7 @@ export default function StatisticsEntry() {
                 <Input
                   id="minutesPlayed"
                   type="number"
-                  {...register('minutesPlayed')}
+                  {...register('minutesPlayed', { valueAsNumber: true })}
                   placeholder="90"
                   min="0"
                   max="120"
@@ -279,22 +293,26 @@ export default function StatisticsEntry() {
             <div className="grid gap-16 md:grid-cols-4">
               <div className="space-y-8">
                 <Label htmlFor="goals">Gols</Label>
-                <Input id="goals" type="number" {...register('goals')} placeholder="0" min="0" />
+                <Input id="goals" type="number" {...register('goals', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.goals && <p className="text-sm text-destructive">{errors.goals.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="assists">Assistências</Label>
-                <Input id="assists" type="number" {...register('assists')} placeholder="0" min="0" />
+                <Input id="assists" type="number" {...register('assists', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.assists && <p className="text-sm text-destructive">{errors.assists.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="shots">Finalizações</Label>
-                <Input id="shots" type="number" {...register('shots')} placeholder="0" min="0" />
+                <Input id="shots" type="number" {...register('shots', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.shots && <p className="text-sm text-destructive">{errors.shots.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="shotsOnTarget">Finalizações no Gol</Label>
-                <Input id="shotsOnTarget" type="number" {...register('shotsOnTarget')} placeholder="0" min="0" />
+                <Input id="shotsOnTarget" type="number" {...register('shotsOnTarget', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.shotsOnTarget && <p className="text-sm text-destructive">{errors.shotsOnTarget.message}</p>}
               </div>
             </div>
           </CardContent>
@@ -309,17 +327,19 @@ export default function StatisticsEntry() {
             <div className="grid gap-16 md:grid-cols-3">
               <div className="space-y-8">
                 <Label htmlFor="accuratePasses">Passes Certos</Label>
-                <Input id="accuratePasses" type="number" {...register('accuratePasses')} placeholder="0" min="0" />
+                <Input id="accuratePasses" type="number" {...register('accuratePasses', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.accuratePasses && <p className="text-sm text-destructive">{errors.accuratePasses.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="inaccuratePasses">Passes Errados</Label>
-                <Input id="inaccuratePasses" type="number" {...register('inaccuratePasses')} placeholder="0" min="0" />
+                <Input id="inaccuratePasses" type="number" {...register('inaccuratePasses', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.inaccuratePasses && <p className="text-sm text-destructive">{errors.inaccuratePasses.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="passAccuracy">Precisão (%)</Label>
-                <Input id="passAccuracy" value={`${passAccuracy}%`} readOnly className="bg-muted" />
+                <Input id="passAccuracy" value={`${passAccuracy}%`} readOnly className="bg-muted h-100" />
               </div>
             </div>
           </CardContent>
@@ -334,22 +354,26 @@ export default function StatisticsEntry() {
             <div className="grid gap-16 md:grid-cols-4">
               <div className="space-y-8">
                 <Label htmlFor="tackles">Desarmes</Label>
-                <Input id="tackles" type="number" {...register('tackles')} placeholder="0" min="0" />
+                <Input id="tackles" type="number" {...register('tackles', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.tackles && <p className="text-sm text-destructive">{errors.tackles.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="interceptions">Interceptações</Label>
-                <Input id="interceptions" type="number" {...register('interceptions')} placeholder="0" min="0" />
+                <Input id="interceptions" type="number" {...register('interceptions', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.interceptions && <p className="text-sm text-destructive">{errors.interceptions.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="foulsCommitted">Faltas Cometidas</Label>
-                <Input id="foulsCommitted" type="number" {...register('foulsCommitted')} placeholder="0" min="0" />
+                <Input id="foulsCommitted" type="number" {...register('foulsCommitted', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.foulsCommitted && <p className="text-sm text-destructive">{errors.foulsCommitted.message}</p>}
               </div>
 
               <div className="space-y-8">
                 <Label htmlFor="foulsSuffered">Faltas Sofridas</Label>
-                <Input id="foulsSuffered" type="number" {...register('foulsSuffered')} placeholder="0" min="0" />
+                <Input id="foulsSuffered" type="number" {...register('foulsSuffered', { valueAsNumber: true })} placeholder="0" min="0" className="h-100" />
+                {errors.foulsSuffered && <p className="text-sm text-destructive">{errors.foulsSuffered.message}</p>}
               </div>
             </div>
           </CardContent>
@@ -367,11 +391,13 @@ export default function StatisticsEntry() {
                 <Input
                   id="yellowCards"
                   type="number"
-                  {...register('yellowCards')}
+                  {...register('yellowCards', { valueAsNumber: true })}
                   placeholder="0"
                   min="0"
                   max="2"
+                  className="h-100"
                 />
+                {errors.yellowCards && <p className="text-sm text-destructive">{errors.yellowCards.message}</p>}
               </div>
 
               <div className="space-y-8">
@@ -379,11 +405,13 @@ export default function StatisticsEntry() {
                 <Input
                   id="redCards"
                   type="number"
-                  {...register('redCards')}
+                  {...register('redCards', { valueAsNumber: true })}
                   placeholder="0"
                   min="0"
                   max="1"
+                  className="h-100"
                 />
+                {errors.redCards && <p className="text-sm text-destructive">{errors.redCards.message}</p>}
               </div>
             </div>
           </CardContent>
@@ -400,12 +428,14 @@ export default function StatisticsEntry() {
               <Input
                 id="performanceRating"
                 type="number"
-                {...register('performanceRating')}
+                {...register('performanceRating', { valueAsNumber: true })}
                 placeholder="7.5"
                 min="0"
                 max="10"
                 step="0.1"
+                className="h-100"
               />
+              {errors.performanceRating && <p className="text-sm text-destructive">{errors.performanceRating.message}</p>}
             </div>
 
             <div className="space-y-8">
@@ -452,7 +482,7 @@ export default function StatisticsEntry() {
 
         {/* Form Actions */}
         <div className="flex justify-end gap-12">
-          <Button type="button" variant="secondary" onClick={() => reset()}>
+          <Button type="button" variant="secondary" onClick={() => navigate('/jogadores')}>
             Cancelar
           </Button>
           <Button type="submit" disabled={isSubmitting}>
