@@ -1,5 +1,6 @@
 import { Navigation } from './Navigation'
 import { UserInfo } from './UserInfo'
+import { TeamSelector } from '@/features/teams/components/TeamSelector'
 
 export function Header() {
   return (
@@ -16,6 +17,9 @@ export function Header() {
 
           {/* Navigation */}
           <Navigation />
+
+          {/* Team Selector */}
+          <TeamSelector />
 
           {/* User Info */}
           <UserInfo />

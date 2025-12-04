@@ -12,7 +12,7 @@ import {
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
-import { useCreateTeamMutation } from '../hooks/useTeamsQuery'
+import { useCreateTeamMutation, useUpdateTeamMutation, useTeamQuery } from '../hooks/useTeamsQuery'
 import { useQueryClient } from '@tanstack/react-query'
 
 const teamFormSchema = z.object({
@@ -28,11 +28,17 @@ type TeamFormData = z.infer<typeof teamFormSchema>
 interface TeamFormModalProps {
   isOpen: boolean
   onClose: () => void
+  teamId?: string
 }
 
-export function TeamFormModal({ isOpen, onClose }: TeamFormModalProps) {
+export function TeamFormModal({ isOpen, onClose, teamId }: TeamFormModalProps) {
+  const isEditMode = !!teamId
   const createMutation = useCreateTeamMutation()
+  const updateMutation = useUpdateTeamMutation()
   const queryClient = useQueryClient()
+
+  // Fetch existing team data if in edit mode
+  const { data: existingTeam } = useTeamQuery(teamId)
 
   const {
     register,
@@ -50,28 +56,48 @@ export function TeamFormModal({ isOpen, onClose }: TeamFormModalProps) {
     },
   })
 
-  // Reset form when modal opens/closes
+  // Reset form when modal opens/closes or when team data loads
   useEffect(() => {
     if (isOpen) {
-      reset({
-        fullName: '',
-        shortName: '',
-        iconUrl: '',
-        mainColorHex: '',
-        secondaryColorHex: '',
-      })
+      if (isEditMode && existingTeam) {
+        // Pre-populate form with existing team data
+        reset({
+          fullName: existingTeam.fullName,
+          shortName: existingTeam.shortName || '',
+          iconUrl: existingTeam.iconUrl || '',
+          mainColorHex: existingTeam.mainColorHex || '',
+          secondaryColorHex: existingTeam.secondaryColorHex || '',
+        })
+      } else if (!isEditMode) {
+        // Clear form for create mode
+        reset({
+          fullName: '',
+          shortName: '',
+          iconUrl: '',
+          mainColorHex: '',
+          secondaryColorHex: '',
+        })
+      }
     }
-  }, [isOpen, reset])
+  }, [isOpen, isEditMode, existingTeam, reset])
 
   const onSubmit = async (data: TeamFormData) => {
     try {
-      await createMutation.mutateAsync({
+      const payload = {
         fullName: data.fullName,
         shortName: data.shortName || undefined,
         iconUrl: data.iconUrl || undefined,
         mainColorHex: data.mainColorHex || undefined,
         secondaryColorHex: data.secondaryColorHex || undefined,
-      })
+      }
+
+      if (isEditMode && teamId) {
+        // Update existing team
+        await updateMutation.mutateAsync({ id: teamId, data: payload })
+      } else {
+        // Create new team
+        await createMutation.mutateAsync(payload)
+      }
 
       // Invalidate teams query to refresh team list
       await queryClient.invalidateQueries({ queryKey: ['teams'] })
@@ -92,7 +118,7 @@ export function TeamFormModal({ isOpen, onClose }: TeamFormModalProps) {
     <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="max-w-md z-[1001]">
         <DialogHeader>
-          <DialogTitle>Criar Novo Time</DialogTitle>
+          <DialogTitle>{isEditMode ? 'Editar Time' : 'Criar Novo Time'}</DialogTitle>
         </DialogHeader>
 
         <form onSubmit={handleSubmit(onSubmit)} className="space-y-16">
@@ -204,7 +230,13 @@ export function TeamFormModal({ isOpen, onClose }: TeamFormModalProps) {
               Cancelar
             </Button>
             <Button type="submit" disabled={isSubmitting} className="h-50">
-              {isSubmitting ? 'Criando...' : 'Criar Time'}
+              {isSubmitting
+                ? isEditMode
+                  ? 'Salvando...'
+                  : 'Criando...'
+                : isEditMode
+                  ? 'Salvar Alterações'
+                  : 'Criar Time'}
             </Button>
           </DialogFooter>
         </form>

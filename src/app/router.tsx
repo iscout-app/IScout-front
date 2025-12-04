@@ -14,6 +14,7 @@ const StatisticsEntry = lazy(() => import('@/features/statistics/StatisticsEntry
 const History = lazy(() => import('@/features/history/History'))
 const Evolution = lazy(() => import('@/features/evolution/Evolution'))
 const Reports = lazy(() => import('@/features/reports/Reports'))
+const TeamsList = lazy(() => import('@/features/teams/pages/TeamsList'))
 const Users = lazy(() => import('@/features/users/Users'))
 
 export const router = createBrowserRouter([
@@ -80,6 +81,10 @@ export const router = createBrowserRouter([
             <Reports />
           </RequirePermission>
         ),
+      },
+      {
+        path: 'teams',
+        element: <TeamsList />,
       },
       {
         path: 'users',
