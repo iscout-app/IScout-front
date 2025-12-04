@@ -124,7 +124,7 @@ export default function StatisticsEntry() {
 
   const onSubmit = async (data: StatisticsFormData) => {
     try {
-      const selectedPlayerData = players?.find((p) => p.id === data.athleteId)
+      const selectedPlayerData = players?.find((p: any) => p.id === data.athleteId)
 
       await createMutation.mutateAsync({
         athleteId: data.athleteId,
@@ -199,7 +199,7 @@ export default function StatisticsEntry() {
                         Carregando...
                       </SelectItem>
                     ) : (
-                      players?.map((player) => (
+                      players?.map((player: any) => (
                         <SelectItem key={player.id} value={player.id}>
                           {player.name} - #{player.shirtNumber}
                         </SelectItem>

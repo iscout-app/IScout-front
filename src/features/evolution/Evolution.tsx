@@ -24,7 +24,7 @@ const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
 export default function Evolution() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>()
 
-  const { data: evolutionData, isLoading, isError } = usePlayerEvolutionQuery(selectedPlayerId)
+  const { data: evolutionData = [], isLoading, isError } = usePlayerEvolutionQuery(selectedPlayerId)
 
   // Format date for charts
   const formatDate = (dateString: string) => {

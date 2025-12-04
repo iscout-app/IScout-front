@@ -17,14 +17,15 @@ import {
   useCreatePlayerMutation,
   useUpdatePlayerMutation,
 } from '../hooks/usePlayersQuery'
+import { useTeam } from '@/features/teams/context/TeamContext'
+import toast from 'react-hot-toast'
 
 // Zod schema for player form
 const playerFormSchema = z.object({
-  name: z.string().min(1, 'Nome é obrigatório').max(255, 'Nome muito longo'),
+  name: z.string().min(3, 'Nome deve ter no mínimo 3 caracteres').max(255, 'Nome muito longo'),
   birthdate: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Data inválida (formato: YYYY-MM-DD)'),
   position: z.string().min(1, 'Posição é obrigatória').max(32, 'Posição muito longa'),
-  shirtNumber: z.coerce.number().int().min(1, 'Número deve ser maior que 0').max(999, 'Número deve ser menor que 1000'),
-  teamId: z.string().uuid('ID do time inválido'),
+  shirtNumber: z.number().int().min(1, 'Número deve ser maior que 0').max(99, 'Número deve ser menor que 100'),
 })
 
 type PlayerFormData = z.infer<typeof playerFormSchema>
@@ -38,9 +39,6 @@ const POSITIONS = [
   { value: 'atacante', label: 'Atacante' },
 ]
 
-// TODO: Get teamId from user's team context
-const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
-
 interface PlayerFormModalProps {
   isOpen: boolean
   onClose: () => void
@@ -49,10 +47,11 @@ interface PlayerFormModalProps {
 
 export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalProps) {
   const isEditMode = !!playerId
+  const { currentTeam } = useTeam()
 
   const { data: player, isLoading: isLoadingPlayer } = usePlayerQuery(
     playerId || '',
-    TEMP_TEAM_ID,
+    currentTeam?.id || '',
   )
   const createMutation = useCreatePlayerMutation()
   const updateMutation = useUpdatePlayerMutation()
@@ -66,9 +65,6 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
     formState: { errors, isSubmitting },
   } = useForm<PlayerFormData>({
     resolver: zodResolver(playerFormSchema),
-    defaultValues: {
-      teamId: TEMP_TEAM_ID,
-    },
   })
 
   const selectedPosition = watch('position')
@@ -80,7 +76,6 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
       setValue('birthdate', player.birthdate)
       setValue('position', player.position)
       setValue('shirtNumber', player.shirtNumber)
-      setValue('teamId', player.teamId || TEMP_TEAM_ID)
     }
   }, [player, isEditMode, setValue])
 
@@ -92,11 +87,16 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
   }, [isOpen, reset])
 
   const onSubmit = async (data: PlayerFormData) => {
+    if (!currentTeam) {
+      toast.error('Nenhum time selecionado')
+      return
+    }
+
     try {
       if (isEditMode && playerId) {
         await updateMutation.mutateAsync({
           id: playerId,
-          teamId: data.teamId,
+          teamId: currentTeam.id,
           data: {
             name: data.name,
             birthdate: data.birthdate,
@@ -105,7 +105,15 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
           },
         })
       } else {
-        await createMutation.mutateAsync(data)
+        await createMutation.mutateAsync({
+          teamId: currentTeam.id,
+          data: {
+            name: data.name,
+            birthdate: data.birthdate,
+            position: data.position,
+            shirtNumber: data.shirtNumber,
+          },
+        })
       }
       onClose()
     } catch (error) {
@@ -213,11 +221,11 @@ export function PlayerFormModal({ isOpen, onClose, playerId }: PlayerFormModalPr
                   <Input
                     id="shirtNumber"
                     type="number"
-                    {...register('shirtNumber')}
+                    {...register('shirtNumber', { valueAsNumber: true })}
                     placeholder="Ex: 10"
                     className={`h-100 ${errors.shirtNumber ? 'border-destructive' : ''}`}
                     min="1"
-                    max="999"
+                    max="99"
                   />
                   {errors.shirtNumber && (
                     <p className="text-sm text-destructive">

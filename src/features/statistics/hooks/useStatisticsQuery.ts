@@ -14,7 +14,7 @@ export function useStatisticsQuery(filters?: StatisticsFilters) {
 }
 
 export function usePlayerStatisticsQuery(athleteId?: string) {
-  return useQuery({
+  return useQuery<import('../types/statistics.types').MatchStatistics[]>({
     queryKey: [...STATISTICS_QUERY_KEY, 'player', athleteId],
     queryFn: () => statisticsApi.getByPlayer(athleteId!),
     enabled: !!athleteId,
@@ -23,7 +23,7 @@ export function usePlayerStatisticsQuery(athleteId?: string) {
 }
 
 export function usePlayerEvolutionQuery(athleteId?: string) {
-  return useQuery({
+  return useQuery<import('../types/statistics.types').StatisticsEvolutionPoint[]>({
     queryKey: [...STATISTICS_QUERY_KEY, 'evolution', athleteId],
     queryFn: () => statisticsApi.getEvolution(athleteId!),
     enabled: !!athleteId,
@@ -41,7 +41,7 @@ export function useCreateStatisticsMutation() {
       toast.success('Estatísticas registradas com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao registrar estatísticas')
+      toast.error(error.message)
     },
   })
 }

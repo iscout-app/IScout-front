@@ -1,7 +1,6 @@
 import { useState, useMemo } from 'react'
 import { usePlayersQuery, useDeletePlayerMutation } from '../hooks/usePlayersQuery'
 import type { Player } from '../types/player.types'
-import { LoadingSpinner } from '@/components/shared/LoadingSpinner'
 import { EmptyState } from '@/components/shared/EmptyState'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
@@ -15,6 +14,7 @@ import {
 import { Search, Trash2, Edit } from 'lucide-react'
 import toast from 'react-hot-toast'
 import { PlayerFormModal } from '../components/PlayerFormModal'
+import { useTeam } from '@/features/teams/context/TeamContext'
 
 function calculateAge(birthdate: string): number {
   const birth = new Date(birthdate)
@@ -28,7 +28,8 @@ function calculateAge(birthdate: string): number {
 }
 
 export default function PlayersList() {
-  const { data: players, isLoading, error } = usePlayersQuery()
+  const { currentTeam } = useTeam()
+  const { data: players, isLoading, error } = usePlayersQuery(currentTeam?.id)
   const deletePlayerMutation = useDeletePlayerMutation()
 
   const [searchTerm, setSearchTerm] = useState('')
@@ -69,7 +70,7 @@ export default function PlayersList() {
   const filteredPlayers = useMemo(() => {
     if (!players) return []
 
-    return players.filter((player) => {
+    return players.filter((player: any) => {
       const matchesSearch =
         player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         player.position.toLowerCase().includes(searchTerm.toLowerCase())
@@ -195,10 +196,10 @@ export default function PlayersList() {
         </div>
       ) : (
         <div className="grid gap-20 md:grid-cols-2 lg:grid-cols-3">
-          {filteredPlayers.map((player) => {
+          {filteredPlayers.map((player: any) => {
             const initials = player.name
               .split(' ')
-              .map((n) => n[0])
+              .map((n: any) => n[0])
               .join('')
               .substring(0, 2)
             const idade = calculateAge(player.birthdate)
@@ -315,7 +316,7 @@ export default function PlayersList() {
                 <div className="flex h-[80px] w-[80px] items-center justify-center rounded-full bg-gradient-to-br from-primary to-teal-700 text-3xl font-bold text-white">
                   {selectedPlayer.name
                     .split(' ')
-                    .map((n) => n[0])
+                    .map((n: any) => n[0])
                     .join('')
                     .substring(0, 2)}
                 </div>
@@ -418,17 +419,23 @@ export default function PlayersList() {
               <Button
                 variant="destructive"
                 onClick={() => selectedPlayer && handleDeletePlayer(selectedPlayer)}
-                disabled={deletePlayerMutation.isPending}
-                className="h-50"
+                disabled={true}
+                className="h-50 cursor-not-allowed opacity-50"
+                title="Exclusão de jogadores ainda não disponível no backend"
               >
                 <Trash2 className="mr-2 h-4 w-4" />
-                {deletePlayerMutation.isPending ? 'Removendo...' : 'Remover'}
+                Remover
               </Button>
               <div className="flex gap-12">
                 <Button variant="secondary" onClick={() => setSelectedPlayer(null)} className="h-50">
                   Fechar
                 </Button>
-                <Button onClick={() => handleOpenEditModal(selectedPlayer.id)} className="h-50">
+                <Button
+                  onClick={() => handleOpenEditModal(selectedPlayer.id)}
+                  disabled={true}
+                  className="h-50 cursor-not-allowed opacity-50"
+                  title="Edição de jogadores ainda não disponível no backend"
+                >
                   <Edit className="mr-2 h-4 w-4" />
                   Editar
                 </Button>

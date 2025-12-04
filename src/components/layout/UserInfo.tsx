@@ -27,7 +27,7 @@ export function UserInfo() {
           variant="outline"
           className={cn(
             'text-[11px] font-semibold uppercase tracking-wider border',
-            ROLE_COLORS[user.role]
+            user.role ? ROLE_COLORS[user.role] : ''
           )}
         >
           {roleDisplayName}

@@ -42,7 +42,7 @@ export function useCreateUserMutation() {
       toast.success('Usuário criado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao criar usuário')
+      toast.error(error.message)
     },
   })
 }
@@ -62,7 +62,7 @@ export function useUpdateUserMutation() {
       toast.success('Usuário atualizado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao atualizar usuário')
+      toast.error(error.message)
     },
   })
 }
@@ -81,7 +81,7 @@ export function useDeleteUserMutation() {
       toast.success('Usuário removido com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao remover usuário')
+      toast.error(error.message)
     },
   })
 }

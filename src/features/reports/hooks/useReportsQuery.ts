@@ -44,8 +44,8 @@ export function usePlayerReportQuery(
     error: playerError,
   } = useQuery({
     queryKey: ['players', playerId, teamId] as const,
-    queryFn: () => (playerId ? playersApi.getById(playerId, teamId) : null),
-    enabled: !!playerId,
+    queryFn: () => (playerId && teamId ? playersApi.getById(playerId, teamId) : null),
+    enabled: !!playerId && !!teamId,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -74,7 +74,8 @@ export function useMultiplePlayersReportQuery(playerIds: string[], teamId?: stri
   // Fetch all players info
   const playersQuery = useQuery({
     queryKey: ['players', 'all', teamId] as const,
-    queryFn: () => playersApi.getAll(teamId),
+    queryFn: () => (teamId ? playersApi.getAll(teamId) : []),
+    enabled: !!teamId,
     staleTime: 5 * 60 * 1000,
   })
 
@@ -89,7 +90,7 @@ export function useMultiplePlayersReportQuery(playerIds: string[], teamId?: stri
   // Aggregate reports for each player
   const reportData: PlayerReportData[] = []
   if (playersQuery.data && statsQuery.data) {
-    const players = playersQuery.data.filter((p) => playerIds.includes(p.id))
+    const players = playersQuery.data.filter((p: any) => playerIds.includes(p.id))
     for (const player of players) {
       const stats = statsQuery.data[player.id] || []
       reportData.push(aggregatePlayerReport(player, stats))

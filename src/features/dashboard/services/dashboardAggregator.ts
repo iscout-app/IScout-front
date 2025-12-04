@@ -23,7 +23,6 @@ export class DashboardAggregator {
     trainings: Training[]
   ): DashboardSummary {
     const now = new Date()
-    const sevenDaysAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
     const weekStart = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000)
 
     // Total players
@@ -111,7 +110,7 @@ export class DashboardAggregator {
   /**
    * Calculate recent matches (mock data for now, as we need matchAthletes join)
    */
-  private static calculateRecentMatches(players: Player[], matches: Match[]): RecentMatch[] {
+  private static calculateRecentMatches(players: Player[], _matches: Match[]): RecentMatch[] {
     // For now, return last 5 players with their stats as "recent matches"
     // In a real implementation, we'd join matchAthletes data
     return players.slice(0, 5).map((p) => ({

@@ -13,7 +13,7 @@ const TEMP_TEAM_ID = '00000000-0000-0000-0000-000000000000'
 export default function History() {
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>()
 
-  const { data: playerStats, isLoading, isError } = usePlayerStatisticsQuery(selectedPlayerId)
+  const { data: playerStats = [], isLoading, isError } = usePlayerStatisticsQuery(selectedPlayerId)
 
   // Calculate aggregated stats
   const aggregatedStats = useMemo(() => {
@@ -22,15 +22,15 @@ export default function History() {
     const totals = playerStats.reduce(
       (acc, stat) => ({
         matches: acc.matches + 1,
-        minutesPlayed: acc.minutesPlayed + stat.minutesPlayed,
+        minutesPlayed: acc.minutesPlayed + (stat.minutesPlayed || 0),
         goals: acc.goals + stat.goals,
         assists: acc.assists + stat.assists,
-        shots: acc.shots + stat.shots,
-        shotsOnTarget: acc.shotsOnTarget + stat.shotsOnTarget,
-        accuratePasses: acc.accuratePasses + stat.accuratePasses,
-        inaccuratePasses: acc.inaccuratePasses + stat.inaccuratePasses,
-        tackles: acc.tackles + stat.tackles,
-        interceptions: acc.interceptions + stat.interceptions,
+        shots: acc.shots + (stat.shots || 0),
+        shotsOnTarget: acc.shotsOnTarget + (stat.shotsOnTarget || 0),
+        accuratePasses: acc.accuratePasses + (stat.accuratePasses || 0),
+        inaccuratePasses: acc.inaccuratePasses + (stat.inaccuratePasses || 0),
+        tackles: acc.tackles + (stat.tackles || 0),
+        interceptions: acc.interceptions + (stat.interceptions || 0),
         yellowCards: acc.yellowCards + stat.yellowCards,
         redCards: acc.redCards + stat.redCards,
       }),
@@ -250,13 +250,13 @@ export default function History() {
                       <div>
                         <p className="text-xs text-muted-foreground">Passes</p>
                         <p className="text-sm font-medium">
-                          {stat.accuratePasses + stat.inaccuratePasses} passes
+                          {(stat.accuratePasses || 0) + (stat.inaccuratePasses || 0)} passes
                         </p>
                         <p className="text-xs text-muted-foreground">
-                          {stat.accuratePasses + stat.inaccuratePasses > 0
+                          {(stat.accuratePasses || 0) + (stat.inaccuratePasses || 0) > 0
                             ? Math.round(
-                                (stat.accuratePasses /
-                                  (stat.accuratePasses + stat.inaccuratePasses)) *
+                                ((stat.accuratePasses || 0) /
+                                  ((stat.accuratePasses || 0) + (stat.inaccuratePasses || 0))) *
                                   100
                               )
                             : 0}

@@ -17,14 +17,25 @@ export function useDashboardQuery() {
       }
 
       // Fetch all required data in parallel
-      const [players, matches, trainings] = await Promise.all([
+      // Note: trainings endpoint may fail due to database schema issues
+      const [players, matches, trainingsResult] = await Promise.allSettled([
         playersApi.getAll(currentTeam.id),
         matchesApi.getAll({ teamId: currentTeam.id }),
         trainingsApi.getAll(currentTeam.id),
       ])
 
+      // Extract values, using empty arrays for failed requests
+      const playersData = players.status === 'fulfilled' ? players.value : []
+      const matchesData = matches.status === 'fulfilled' ? matches.value : []
+      const trainingsData = trainingsResult.status === 'fulfilled' ? trainingsResult.value : []
+
+      // Log any failures for debugging
+      if (players.status === 'rejected') console.warn('Failed to fetch players:', players.reason)
+      if (matches.status === 'rejected') console.warn('Failed to fetch matches:', matches.reason)
+      if (trainingsResult.status === 'rejected') console.warn('Failed to fetch trainings:', trainingsResult.reason)
+
       // Aggregate data client-side
-      return DashboardAggregator.aggregate(players, matches, trainings)
+      return DashboardAggregator.aggregate(playersData, matchesData, trainingsData)
     },
     enabled: !!currentTeam,
     staleTime: 2 * 60 * 1000, // 2 minutes

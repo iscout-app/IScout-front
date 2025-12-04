@@ -1,4 +1,4 @@
-import { createContext, useContext, useState, useEffect, ReactNode } from 'react'
+import { createContext, useContext, useState, useEffect, type ReactNode } from 'react'
 import type { Team } from '../types/team.types'
 import { useTeamsQuery } from '../hooks/useTeamsQuery'
 import { useAuth } from '@/features/auth/context/AuthContext'

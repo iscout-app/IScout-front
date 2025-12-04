@@ -1,4 +1,6 @@
-import { Role } from './auth.types'
+import { type Role } from './auth.types'
+
+export type { Role }
 
 export type Permission =
   | 'CADASTRAR_USUARIO'

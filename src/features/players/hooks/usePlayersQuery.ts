@@ -34,7 +34,7 @@ export function useCreatePlayerMutation() {
       toast.success('Jogador cadastrado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao cadastrar jogador')
+      toast.error(error.message)
     },
   })
 }
@@ -50,7 +50,7 @@ export function useUpdatePlayerMutation() {
       toast.success('Jogador atualizado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao atualizar jogador')
+      toast.error(error.message)
     },
   })
 }
@@ -66,7 +66,7 @@ export function useDeletePlayerMutation() {
       toast.success('Jogador removido com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message || 'Erro ao remover jogador')
+      toast.error(error.message)
     },
   })
 }

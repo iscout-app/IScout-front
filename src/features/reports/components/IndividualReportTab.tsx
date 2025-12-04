@@ -14,13 +14,15 @@ import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
 import { usePlayerReportQuery } from '../hooks/useReportsQuery'
 import { PlayerReportPreview } from './PlayerReportPreview'
 import { generateIndividualReportPDF } from '../utils/pdfGenerator'
+import { useTeam } from '@/features/teams/context/TeamContext'
 import toast from 'react-hot-toast'
 
 export function IndividualReportTab() {
+  const { currentTeam } = useTeam()
   const [selectedPlayerId, setSelectedPlayerId] = useState<string>('')
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const { data: players = [], isLoading: isLoadingPlayers } = usePlayersQuery()
+  const { data: players = [], isLoading: isLoadingPlayers } = usePlayersQuery(currentTeam?.id)
   const {
     data: reportData,
     isLoading: isLoadingReport,
@@ -64,7 +66,7 @@ export function IndividualReportTab() {
                   <SelectValue placeholder="Escolha um jogador..." />
                 </SelectTrigger>
                 <SelectContent>
-                  {players.map((player) => (
+                  {players.map((player: any) => (
                     <SelectItem key={player.id} value={player.id}>
                       {player.name} - {player.position} (#{player.shirtNumber})
                     </SelectItem>

@@ -1,5 +1,5 @@
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
-import { ReactNode } from 'react'
+import { Card, CardContent } from '@/components/ui/card'
+import { type ReactNode } from 'react'
 
 interface StatCardProps {
   icon: ReactNode | string

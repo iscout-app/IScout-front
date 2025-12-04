@@ -56,12 +56,16 @@ export function PositionChart({ data }: PositionChartProps) {
           },
           generateLabels: (chart: ChartJS) => {
             const datasets = chart.data.datasets
-            return chart.data.labels?.map((label, i) => ({
-              text: `${label}`,
-              fillStyle: datasets[0].backgroundColor?.[i] as string,
-              hidden: false,
-              index: i,
-            })) || []
+            return chart.data.labels?.map((label, i) => {
+              const bgColor = datasets[0].backgroundColor
+              const color = Array.isArray(bgColor) ? bgColor[i] : bgColor
+              return {
+                text: `${label}`,
+                fillStyle: color as string,
+                hidden: false,
+                index: i,
+              }
+            }) || []
           },
         },
       },
@@ -75,7 +79,7 @@ export function PositionChart({ data }: PositionChartProps) {
           size: 12,
         },
         callbacks: {
-          label: (context) => {
+          label: (context: any) => {
             const total = context.dataset.data.reduce((a: number, b: number) => a + b, 0)
             const percentage = ((context.parsed / total) * 100).toFixed(1)
             return `${context.label}: ${context.parsed} (${percentage}%)`

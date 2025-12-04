@@ -1,4 +1,5 @@
 import axios, { AxiosError } from 'axios'
+import toast from 'react-hot-toast'
 
 // Use relative URL for Vite proxy to work (proxy configured in vite.config.ts)
 // In production, set VITE_API_URL to the actual API URL
@@ -31,6 +32,20 @@ apiClient.interceptors.response.use(
   (error: AxiosError) => {
     // Handle 401 Unauthorized - redirect to login
     if (error.response?.status === 401) {
+      // Show toast before redirect
+      toast.error('Sessão expirada. Faça login novamente.')
+      // Clear session storage
+      sessionStorage.removeItem('auth')
+      // Redirect to login if not already there
+      if (!window.location.pathname.includes('/login')) {
+        window.location.href = '/login'
+      }
+    }
+
+    // Handle 403 Forbidden - redirect to login
+    if (error.response?.status === 403) {
+      // Show toast before redirect
+      toast.error('Sessão inválida. Faça login novamente.')
       // Clear session storage
       sessionStorage.removeItem('auth')
       // Redirect to login if not already there
@@ -43,7 +58,7 @@ apiClient.interceptors.response.use(
     const message =
       (error.response?.data as { message?: string })?.message ||
       error.message ||
-      'An error occurred'
+      'Ocorreu um erro inesperado'
 
     return Promise.reject(new Error(message))
   }

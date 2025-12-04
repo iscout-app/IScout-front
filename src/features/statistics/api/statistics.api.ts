@@ -3,7 +3,7 @@ import type {
   MatchStatistics,
   CreateStatisticsDto,
   StatisticsFilters,
-  StatisticsEvolutionPoint,
+
   BackendMatchAthlete,
 } from '../types/statistics.types'
 import { RatingCalculator } from '../services/ratingCalculator'
@@ -59,18 +59,18 @@ export const statisticsApi = {
     return transformMatchAthlete(result)
   },
 
-  getByPlayer: async (athleteId: string) => {
+  getByPlayer: async (_athleteId: string) => {
     // Backend doesn't have this endpoint yet
     // Would need to fetch all matches and filter by athleteId
     throw new Error('Consulta de estatísticas por jogador ainda não implementada no backend')
   },
 
-  getEvolution: async (athleteId: string) => {
+  getEvolution: async (_athleteId: string) => {
     // Backend doesn't have this endpoint yet
     throw new Error('Evolução de estatísticas ainda não implementada no backend')
   },
 
-  list: async (filters?: StatisticsFilters) => {
+  list: async (_filters?: StatisticsFilters) => {
     // Backend doesn't have a dedicated stats list endpoint
     // Statistics are part of match data
     throw new Error('Listagem de estatísticas ainda não implementada no backend')

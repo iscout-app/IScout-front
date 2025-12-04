@@ -13,9 +13,11 @@ import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
 import { useAuth } from '@/features/auth/context/AuthContext'
 import { USER_ROLE_LABELS } from '@/features/users/types/users.types'
+import { useTeam } from '@/features/teams/context/TeamContext'
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboardQuery()
+  const { currentTeam } = useTeam()
   const navigate = useNavigate()
   const { user } = useAuth()
 
@@ -23,6 +25,23 @@ export default function Dashboard() {
     return (
       <div className="flex h-[60vh] items-center justify-center">
         <LoadingSpinner size="lg" />
+      </div>
+    )
+  }
+
+  // Check if user has no team
+  if (!currentTeam) {
+    return (
+      <div className="flex h-[60vh] items-center justify-center">
+        <div className="text-center space-y-24 max-w-md">
+          <div className="text-6xl">⚽</div>
+          <div>
+            <h2 className="text-2xl font-bold mb-8">Nenhum time cadastrado</h2>
+            <p className="text-muted-foreground mb-24">
+              Você precisa estar vinculado a um time para acessar o dashboard. Entre em contato com o administrador do sistema.
+            </p>
+          </div>
+        </div>
       </div>
     )
   }

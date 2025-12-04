@@ -6,15 +6,17 @@ import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
 import { useMultiplePlayersReportQuery } from '../hooks/useReportsQuery'
 import { PlayerSelector } from './PlayerSelector'
 import { generateCollectiveReportPDF } from '../utils/pdfGenerator'
+import { useTeam } from '@/features/teams/context/TeamContext'
 import toast from 'react-hot-toast'
 
 export function CollectiveReportTab() {
+  const { currentTeam } = useTeam()
   const [selectedPlayerIds, setSelectedPlayerIds] = useState<string[]>([])
   const [categoryFilter, setCategoryFilter] = useState('all')
   const [positionFilter, setPositionFilter] = useState('all')
   const [isGenerating, setIsGenerating] = useState(false)
 
-  const { data: players = [], isLoading: isLoadingPlayers } = usePlayersQuery()
+  const { data: players = [], isLoading: isLoadingPlayers } = usePlayersQuery(currentTeam?.id)
   const {
     data: reportsData = [],
     isLoading: isLoadingReports,

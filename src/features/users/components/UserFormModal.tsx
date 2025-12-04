@@ -28,7 +28,7 @@ const userFormSchema = z.object({
   email: z.string().email('Email inválido').max(255, 'Email muito longo'),
   password: z.string().min(8, 'Senha deve ter no mínimo 8 caracteres').max(255, 'Senha muito longa'),
   role: z.enum(['admin', 'tecnico', 'olheiro', 'responsavel']),
-  status: z.enum(['active', 'inactive']).default('active'),
+  status: z.enum(['active', 'inactive']),
   phone: z.string().max(20, 'Telefone muito longo').optional().or(z.literal('')),
 })
 

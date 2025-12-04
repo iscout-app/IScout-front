@@ -1,4 +1,4 @@
-import { ReactNode } from 'react'
+import { type ReactNode } from 'react'
 import { Navigate } from 'react-router-dom'
 import type { Permission } from '@/types/permissions.types'
 import { usePermission } from '@/lib/rbac/hooks'
