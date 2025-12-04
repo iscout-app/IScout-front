@@ -1,105 +1,90 @@
 import { useQuery } from '@tanstack/react-query'
 import { reportsApi } from '../api/reports.api'
-import { playersApi } from '@/features/players/api/players.api'
-import { aggregatePlayerReport } from '../utils/reportAggregator'
-import type { PlayerReportData } from '../types/reports.types'
+import { useTeam } from '@/features/teams/context/TeamContext'
 
 export const REPORTS_QUERY_KEY = ['reports'] as const
 
 /**
- * Hook to fetch player statistics for reports
+ * Hook to fetch player statistics for reports using new endpoints
  */
 export function usePlayerStatsQuery(playerId: string | undefined) {
+  const { currentTeam } = useTeam()
+
   return useQuery({
-    queryKey: [...REPORTS_QUERY_KEY, 'player-stats', playerId] as const,
-    queryFn: () => (playerId ? reportsApi.getPlayerStats(playerId) : []),
-    enabled: !!playerId,
+    queryKey: [...REPORTS_QUERY_KEY, 'player-stats', currentTeam?.id, playerId] as const,
+    queryFn: () => {
+      if (!playerId || !currentTeam?.id) return null
+      return reportsApi.getPlayerStats(currentTeam.id, playerId)
+    },
+    enabled: !!playerId && !!currentTeam?.id,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 
 /**
- * Hook to fetch player evolution data
+ * Hook to fetch player match history
  */
-export function usePlayerEvolutionQuery(playerId: string | undefined) {
+export function usePlayerMatchesQuery(playerId: string | undefined) {
+  const { currentTeam } = useTeam()
+
   return useQuery({
-    queryKey: [...REPORTS_QUERY_KEY, 'player-evolution', playerId] as const,
-    queryFn: () => (playerId ? reportsApi.getPlayerEvolution(playerId) : []),
-    enabled: !!playerId,
+    queryKey: [...REPORTS_QUERY_KEY, 'player-matches', currentTeam?.id, playerId] as const,
+    queryFn: () => {
+      if (!playerId || !currentTeam?.id) return null
+      return reportsApi.getPlayerMatches(playerId, { teamId: currentTeam.id, limit: 100 })
+    },
+    enabled: !!playerId && !!currentTeam?.id,
     staleTime: 5 * 60 * 1000,
   })
 }
 
 /**
- * Hook to fetch complete player report data (player info + aggregated stats)
+ * Hook to fetch player training participation
  */
-export function usePlayerReportQuery(
-  playerId: string | undefined,
-  teamId?: string
-): { data: PlayerReportData | null; isLoading: boolean; error: Error | null } {
-  // Fetch player info
-  const {
-    data: player,
-    isLoading: isLoadingPlayer,
-    error: playerError,
-  } = useQuery({
-    queryKey: ['players', playerId, teamId] as const,
-    queryFn: () => (playerId && teamId ? playersApi.getById(playerId, teamId) : null),
-    enabled: !!playerId && !!teamId,
+export function usePlayerTrainingsQuery(playerId: string | undefined) {
+  const { currentTeam } = useTeam()
+
+  return useQuery({
+    queryKey: [...REPORTS_QUERY_KEY, 'player-trainings', currentTeam?.id, playerId] as const,
+    queryFn: () => {
+      if (!playerId || !currentTeam?.id) return null
+      return reportsApi.getPlayerTrainings(currentTeam.id, playerId, { limit: 100 })
+    },
+    enabled: !!playerId && !!currentTeam?.id,
     staleTime: 5 * 60 * 1000,
   })
+}
 
-  // Fetch player stats
-  const {
-    data: stats = [],
-    isLoading: isLoadingStats,
-    error: statsError,
-  } = usePlayerStatsQuery(playerId)
+/**
+ * Hook to fetch complete player report data (stats + matches + trainings)
+ */
+export function usePlayerReportQuery(playerId: string | undefined) {
+  const { currentTeam } = useTeam()
 
-  // Aggregate data
-  const reportData =
-    player && stats.length >= 0 ? aggregatePlayerReport(player, stats) : null
-
-  return {
-    data: reportData,
-    isLoading: isLoadingPlayer || isLoadingStats,
-    error: (playerError || statsError) as Error | null,
-  }
+  return useQuery({
+    queryKey: [...REPORTS_QUERY_KEY, 'player-complete', currentTeam?.id, playerId] as const,
+    queryFn: () => {
+      if (!playerId || !currentTeam?.id) return null
+      return reportsApi.getCompletePlayerReport(currentTeam.id, playerId)
+    },
+    enabled: !!playerId && !!currentTeam?.id,
+    staleTime: 5 * 60 * 1000,
+  })
 }
 
 /**
  * Hook to fetch multiple players' stats for collective reports
  */
-export function useMultiplePlayersReportQuery(playerIds: string[], teamId?: string) {
-  // Fetch all players info
-  const playersQuery = useQuery({
-    queryKey: ['players', 'all', teamId] as const,
-    queryFn: () => (teamId ? playersApi.getAll(teamId) : []),
-    enabled: !!teamId,
+export function useMultiplePlayersStatsQuery(playerIds: string[]) {
+  const { currentTeam } = useTeam()
+
+  return useQuery({
+    queryKey: [...REPORTS_QUERY_KEY, 'multiple-players', currentTeam?.id, playerIds] as const,
+    queryFn: () => {
+      if (!currentTeam?.id || playerIds.length === 0) return null
+      return reportsApi.getMultiplePlayersStats(currentTeam.id, playerIds)
+    },
+    enabled: !!currentTeam?.id && playerIds.length > 0,
     staleTime: 5 * 60 * 1000,
   })
-
-  // Fetch stats for selected players
-  const statsQuery = useQuery({
-    queryKey: [...REPORTS_QUERY_KEY, 'multiple-players', playerIds] as const,
-    queryFn: () => reportsApi.getMultiplePlayersStats(playerIds),
-    enabled: playerIds.length > 0,
-    staleTime: 5 * 60 * 1000,
-  })
-
-  // Aggregate reports for each player
-  const reportData: PlayerReportData[] = []
-  if (playersQuery.data && statsQuery.data) {
-    const players = playersQuery.data.filter((p: any) => playerIds.includes(p.id))
-    for (const player of players) {
-      const stats = statsQuery.data[player.id] || []
-      reportData.push(aggregatePlayerReport(player, stats))
-    }
-  }
-
-  return {
-    data: reportData,
-    isLoading: playersQuery.isLoading || statsQuery.isLoading,
-    error: (playersQuery.error || statsQuery.error) as Error | null,
-  }
 }

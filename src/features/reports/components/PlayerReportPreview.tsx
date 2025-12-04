@@ -4,10 +4,14 @@ import type { PlayerReportData } from '../types/reports.types'
 import { calculateAge, formatNumber } from '../utils/reportAggregator'
 
 interface PlayerReportPreviewProps {
-  report: PlayerReportData
+  report: PlayerReportData | null
 }
 
 export function PlayerReportPreview({ report }: PlayerReportPreviewProps) {
+  if (!report) {
+    return null
+  }
+
   const age = calculateAge(report.birthdate)
 
   return (

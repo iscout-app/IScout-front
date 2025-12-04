@@ -8,6 +8,15 @@ export const TEAMS_QUERY_KEY = ['teams'] as const
 export function useTeamsQuery(enabled = true) {
   return useQuery({
     queryKey: TEAMS_QUERY_KEY,
+    queryFn: () => teamsApi.getOwn(),
+    enabled,
+    staleTime: 10 * 60 * 1000, // 10 minutes
+  })
+}
+
+export function useAllTeamsQuery(enabled = true) {
+  return useQuery({
+    queryKey: [...TEAMS_QUERY_KEY, 'all'],
     queryFn: () => teamsApi.getAll(),
     enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes

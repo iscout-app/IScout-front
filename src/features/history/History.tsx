@@ -1,9 +1,9 @@
 import { useState, useMemo } from 'react'
-import { Card, CardContent } from '@/components/ui/card'
+import { Card } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { Label } from '@/components/ui/label'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
-import { usePlayersQuery, usePlayerQuery } from '@/features/players/hooks/usePlayersQuery'
+import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
 import { usePlayerHistoryQuery } from './hooks/useHistoryQuery'
 import { useTeam } from '@/features/teams/context/TeamContext'
 import { Target, Users, BarChart3, Star } from 'lucide-react'
@@ -26,7 +26,6 @@ export default function History() {
   const [eventTypeFilter, setEventTypeFilter] = useState<string>('all')
   const [periodFilter, setPeriodFilter] = useState<string>('all')
 
-  const { data: playerData } = usePlayerQuery(selectedPlayerId, currentTeam?.id)
   const { data: historyData, isLoading } = usePlayerHistoryQuery(currentTeam?.id, selectedPlayerId)
 
   const selectedPlayer = players?.find((p: any) => p.id === selectedPlayerId)

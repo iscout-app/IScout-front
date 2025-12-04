@@ -3,6 +3,17 @@ import type { Team, CreateTeamDto, UpdateTeamDto } from '../types/team.types'
 
 export const teamsApi = {
   getAll: async () => {
+    const response = await apiClient.get<{ success: boolean; data: Team[] }>('/teams/all')
+    return response.data.data || response.data
+  },
+
+  getOwn: async () => {
+    const response = await apiClient.get<{ success: boolean; data: Team[] }>('/teams')
+    return response.data.data || response.data
+  },
+
+  // Alias for backwards compatibility - returns user's own teams
+  getMyTeams: async () => {
     const response = await apiClient.get<{ success: boolean; data: Team[] }>('/teams')
     return response.data.data || response.data
   },

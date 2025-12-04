@@ -3,7 +3,7 @@ import { Card, CardContent } from '@/components/ui/card'
 import { Button } from '@/components/ui/button'
 import { FileDown, Loader2 } from 'lucide-react'
 import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
-import { useMultiplePlayersReportQuery } from '../hooks/useReportsQuery'
+import { useMultiplePlayersStatsQuery } from '../hooks/useReportsQuery'
 import { PlayerSelector } from './PlayerSelector'
 import { generateCollectiveReportPDF } from '../utils/pdfGenerator'
 import { useTeam } from '@/features/teams/context/TeamContext'
@@ -18,9 +18,36 @@ export function CollectiveReportTab() {
 
   const { data: players = [], isLoading: isLoadingPlayers } = usePlayersQuery(currentTeam?.id)
   const {
-    data: reportsData = [],
+    data: reportsData,
     isLoading: isLoadingReports,
-  } = useMultiplePlayersReportQuery(selectedPlayerIds)
+  } = useMultiplePlayersStatsQuery(selectedPlayerIds)
+
+  // Convert object to array for rendering and transform data structure
+  const reportsArray = reportsData
+    ? Object.values(reportsData)
+        .filter(Boolean)
+        .map((data) => ({
+          id: data.athlete.id,
+          name: data.athlete.name,
+          position: data.career.position,
+          birthdate: data.athlete.birthdate,
+          shirtNumber: data.career.shirtNumber,
+          teamId: currentTeam?.id || '',
+          totalMatches: data.stats.matches,
+          totalGoals: data.stats.goals,
+          totalAssists: data.stats.assists,
+          totalYellowCards: data.stats.yellowCards,
+          totalRedCards: data.stats.redCards,
+          averageRating: 0, // Not available
+          goalsPerMatch: data.stats.goalsPerMatch,
+          assistsPerMatch: data.stats.assistsPerMatch,
+          passAccuracy: 0, // Not available
+          tacklesPerMatch: 0, // Not available
+          interceptionsPerMatch: 0, // Not available
+          evolution: [],
+          recentMatches: [],
+        }))
+    : []
 
   const handleTogglePlayer = (playerId: string) => {
     setSelectedPlayerIds((prev) =>
@@ -34,7 +61,7 @@ export function CollectiveReportTab() {
       return
     }
 
-    if (reportsData.length === 0) {
+    if (reportsArray.length === 0) {
       toast.error('Aguarde o carregamento dos dados')
       return
     }
@@ -43,7 +70,7 @@ export function CollectiveReportTab() {
       setIsGenerating(true)
       // Simulate a small delay for better UX
       await new Promise((resolve) => setTimeout(resolve, 500))
-      generateCollectiveReportPDF(reportsData)
+      generateCollectiveReportPDF(reportsArray)
       toast.success('Relatório coletivo gerado com sucesso!')
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -113,7 +140,7 @@ export function CollectiveReportTab() {
       )}
 
       {/* Preview Table */}
-      {selectedPlayerIds.length >= 2 && reportsData.length > 0 && (
+      {selectedPlayerIds.length >= 2 && reportsArray.length > 0 && (
         <Card>
           <CardContent className="p-24">
             <div className="mb-16">
@@ -137,7 +164,7 @@ export function CollectiveReportTab() {
                   </tr>
                 </thead>
                 <tbody>
-                  {reportsData.map((report) => (
+                  {reportsArray.map((report: any) => (
                     <tr key={report.id} className="border-b hover:bg-muted/50">
                       <td className="p-8">{report.name}</td>
                       <td className="p-8">{report.position}</td>

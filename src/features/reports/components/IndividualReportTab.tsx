@@ -29,8 +29,48 @@ export function IndividualReportTab() {
     error,
   } = usePlayerReportQuery(selectedPlayerId || undefined)
 
+  // Transform API data to PDF format
+  const transformedData =
+    reportData?.stats && reportData?.matches
+      ? {
+          id: reportData.stats.athlete.id,
+          name: reportData.stats.athlete.name,
+          position: reportData.stats.career.position,
+          birthdate: reportData.stats.athlete.birthdate,
+          shirtNumber: reportData.stats.career.shirtNumber,
+          teamId: currentTeam?.id || '',
+          totalMatches: reportData.stats.stats.matches,
+          totalGoals: reportData.stats.stats.goals,
+          totalAssists: reportData.stats.stats.assists,
+          totalYellowCards: reportData.stats.stats.yellowCards,
+          totalRedCards: reportData.stats.stats.redCards,
+          averageRating: 0, // Not available
+          goalsPerMatch: reportData.stats.stats.goalsPerMatch,
+          assistsPerMatch: reportData.stats.stats.assistsPerMatch,
+          passAccuracy: 0, // Not available
+          tacklesPerMatch: 0, // Not available
+          interceptionsPerMatch: 0, // Not available
+          evolution: reportData.matches.map((match: any) => ({
+            date: match.timestamp,
+            goals: match.performance.goals,
+            assists: match.performance.assists,
+            rating: 0,
+            yellowCards: match.performance.yellowCards,
+            redCards: match.performance.redCards,
+          })),
+          recentMatches: reportData.matches.slice(0, 5).map((match: any) => ({
+            date: match.timestamp,
+            opponent: match.opponent.name,
+            result: match.result,
+            goals: match.performance.goals,
+            assists: match.performance.assists,
+            rating: 0,
+          })),
+        }
+      : null
+
   const handleGeneratePDF = async () => {
-    if (!reportData) {
+    if (!transformedData) {
       toast.error('Selecione um jogador primeiro')
       return
     }
@@ -39,7 +79,7 @@ export function IndividualReportTab() {
       setIsGenerating(true)
       // Simulate a small delay for better UX
       await new Promise((resolve) => setTimeout(resolve, 500))
-      generateIndividualReportPDF(reportData)
+      generateIndividualReportPDF(transformedData as any)
       toast.success('Relatório gerado com sucesso!')
     } catch (error) {
       console.error('Error generating PDF:', error)
@@ -123,7 +163,7 @@ export function IndividualReportTab() {
               Dados atualizados em tempo real
             </p>
           </div>
-          <PlayerReportPreview report={reportData} />
+          <PlayerReportPreview report={transformedData as any} />
         </>
       ) : null}
     </div>

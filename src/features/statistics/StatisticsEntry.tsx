@@ -11,7 +11,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@
 import { Textarea } from '@/components/ui/textarea'
 import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
 import { useTeam } from '@/features/teams/context/TeamContext'
-import { useTeamsQuery } from '@/features/teams/hooks/useTeamsQuery'
+import { useAllTeamsQuery } from '@/features/teams/hooks/useTeamsQuery'
 import { trainingsApi, matchesApi } from './api/statistics.api'
 import toast from 'react-hot-toast'
 import { useQueryClient } from '@tanstack/react-query'
@@ -82,7 +82,6 @@ const matchFormSchema = z.object({
 
 type TrainingFormData = z.infer<typeof trainingFormSchema>
 type MatchFormData = z.infer<typeof matchFormSchema>
-type StatisticsFormData = TrainingFormData | MatchFormData
 
 const defaultTrainingValues: Partial<TrainingFormData> = {
   eventDate: new Date().toISOString().split('T')[0],
@@ -125,7 +124,7 @@ export default function StatisticsEntry() {
   const queryClient = useQueryClient()
   const { currentTeam } = useTeam()
   const { data: players, isLoading: isLoadingPlayers } = usePlayersQuery(currentTeam?.id)
-  const { data: teams, isLoading: isLoadingTeams } = useTeamsQuery()
+  const { data: teams, isLoading: isLoadingTeams } = useAllTeamsQuery()
   const [eventType, setEventType] = useState<'treino' | 'partida' | ''>('')
   const [isSubmitting, setIsSubmitting] = useState(false)
 
@@ -147,8 +146,6 @@ export default function StatisticsEntry() {
   // Watch values for calculations (training only)
   const trainingAccuratePasses = trainingForm.watch('accuratePasses') || 0
   const trainingInaccuratePasses = trainingForm.watch('inaccuratePasses') || 0
-  const trainingTackles = trainingForm.watch('tackles') || 0
-  const trainingInterceptions = trainingForm.watch('interceptions') || 0
 
   const passAccuracy = useMemo(() => {
     const total = trainingAccuratePasses + trainingInaccuratePasses
@@ -348,8 +345,20 @@ export default function StatisticsEntry() {
                   <div className="space-y-8">
                     <Label htmlFor="athleteId">Jogador *</Label>
                     <Select
-                      value={activeForm.watch('athleteId') || 'placeholder'}
-                      onValueChange={(value) => value !== 'placeholder' && activeForm.setValue('athleteId', value)}
+                      value={
+                        eventType === 'treino'
+                          ? trainingForm.watch('athleteId') || 'placeholder'
+                          : matchForm.watch('athleteId') || 'placeholder'
+                      }
+                      onValueChange={(value) => {
+                        if (value !== 'placeholder') {
+                          if (eventType === 'treino') {
+                            trainingForm.setValue('athleteId', value)
+                          } else {
+                            matchForm.setValue('athleteId', value)
+                          }
+                        }
+                      }}
                     >
                       <SelectTrigger
                         id="athleteId"
@@ -381,12 +390,21 @@ export default function StatisticsEntry() {
 
                   <div className="space-y-8">
                     <Label htmlFor="eventDate">Data do Evento *</Label>
-                    <Input
-                      id="eventDate"
-                      type="date"
-                      {...activeForm.register('eventDate')}
-                      className={`h-100 ${activeForm.formState.errors.eventDate ? 'border-destructive' : ''}`}
-                    />
+                    {eventType === 'treino' ? (
+                      <Input
+                        id="eventDate"
+                        type="date"
+                        {...trainingForm.register('eventDate')}
+                        className={`h-100 ${trainingForm.formState.errors.eventDate ? 'border-destructive' : ''}`}
+                      />
+                    ) : (
+                      <Input
+                        id="eventDate"
+                        type="date"
+                        {...matchForm.register('eventDate')}
+                        className={`h-100 ${matchForm.formState.errors.eventDate ? 'border-destructive' : ''}`}
+                      />
+                    )}
                     {activeForm.formState.errors.eventDate && (
                       <p className="text-sm text-destructive">{activeForm.formState.errors.eventDate.message}</p>
                     )}
@@ -717,7 +735,7 @@ export default function StatisticsEntry() {
                                 ?.filter((team: any) => team.id !== currentTeam?.id)
                                 .map((team: any) => (
                                   <SelectItem key={team.id} value={team.id}>
-                                    {team.name}
+                                    {team.fullName} ({team.shortName})
                                   </SelectItem>
                                 ))
                             )}

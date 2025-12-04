@@ -1,47 +1,43 @@
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
-import { statisticsApi } from '../api/statistics.api'
-import type { CreateStatisticsDto, StatisticsFilters } from '../types/statistics.types'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 
 export const STATISTICS_QUERY_KEY = ['statistics'] as const
 
-export function useStatisticsQuery(filters?: StatisticsFilters) {
-  return useQuery({
-    queryKey: filters ? [...STATISTICS_QUERY_KEY, filters] : STATISTICS_QUERY_KEY,
-    queryFn: () => statisticsApi.list(filters),
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
+// These hooks are placeholder for future use
+// The actual statistics registration is done through trainingsApi and matchesApi
 
-export function usePlayerStatisticsQuery(athleteId?: string) {
-  return useQuery<import('../types/statistics.types').MatchStatistics[]>({
-    queryKey: [...STATISTICS_QUERY_KEY, 'player', athleteId],
-    queryFn: () => statisticsApi.getByPlayer(athleteId!),
-    enabled: !!athleteId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-export function usePlayerEvolutionQuery(athleteId?: string) {
-  return useQuery<import('../types/statistics.types').StatisticsEvolutionPoint[]>({
-    queryKey: [...STATISTICS_QUERY_KEY, 'evolution', athleteId],
-    queryFn: () => statisticsApi.getEvolution(athleteId!),
-    enabled: !!athleteId,
-    staleTime: 5 * 60 * 1000, // 5 minutes
-  })
-}
-
-export function useCreateStatisticsMutation() {
+export function useCreateTrainingMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreateStatisticsDto) => statisticsApi.create(data),
+    mutationFn: async (data: any) => {
+      // This is handled in StatisticsEntry.tsx directly
+      return data
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: STATISTICS_QUERY_KEY })
-      toast.success('Estatísticas registradas com sucesso!')
+      toast.success('Treino registrado com sucesso!')
     },
     onError: (error: Error) => {
-      toast.error(error.message)
+      toast.error(error.message || 'Erro ao registrar treino')
+    },
+  })
+}
+
+export function useCreateMatchMutation() {
+  const queryClient = useQueryClient()
+
+  return useMutation({
+    mutationFn: async (data: any) => {
+      // This is handled in StatisticsEntry.tsx directly
+      return data
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: STATISTICS_QUERY_KEY })
+      toast.success('Partida registrada com sucesso!')
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || 'Erro ao registrar partida')
     },
   })
 }
