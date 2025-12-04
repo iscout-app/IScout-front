@@ -22,7 +22,7 @@ export function TeamProvider({ children }: TeamProviderProps) {
   const { isAuthenticated } = useAuth()
   const [currentTeam, setCurrentTeamState] = useState<Team | null>(null)
 
-  const { data: teams = [], isLoading } = useTeamsQuery()
+  const { data: teams = [], isLoading } = useTeamsQuery(isAuthenticated)
 
   // Load team from localStorage on mount and when teams are fetched
   useEffect(() => {

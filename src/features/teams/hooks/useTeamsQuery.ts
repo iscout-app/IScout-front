@@ -5,10 +5,11 @@ import toast from 'react-hot-toast'
 
 export const TEAMS_QUERY_KEY = ['teams'] as const
 
-export function useTeamsQuery() {
+export function useTeamsQuery(enabled = true) {
   return useQuery({
     queryKey: TEAMS_QUERY_KEY,
     queryFn: () => teamsApi.getAll(),
+    enabled,
     staleTime: 10 * 60 * 1000, // 10 minutes
   })
 }
