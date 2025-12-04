@@ -22,12 +22,12 @@ export function CategoryChart({ data }: CategoryChartProps) {
     labels: data.map((item) => item.category),
     datasets: [
       {
-        label: 'Média',
-        data: data.map((item) => item.average),
-        backgroundColor: 'rgba(33, 128, 141, 0.7)',
-        borderColor: 'rgb(33, 128, 141)',
-        borderWidth: 1,
-        borderRadius: 6,
+        label: 'Média de Desempenho',
+        data: data.map((item) => item.averageRating),
+        backgroundColor: 'rgba(100, 100, 100, 0.7)',
+        borderColor: 'rgba(100, 100, 100, 0.9)',
+        borderWidth: 0,
+        borderRadius: 4,
       },
     ],
   }
@@ -84,6 +84,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
     <Card>
       <CardHeader>
         <CardTitle className="text-base">Desempenho por Categoria</CardTitle>
+        <p className="text-sm text-muted-foreground">Média de notas</p>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">

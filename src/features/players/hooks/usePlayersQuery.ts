@@ -4,19 +4,20 @@ import toast from 'react-hot-toast'
 
 export const PLAYERS_QUERY_KEY = ['players'] as const
 
-export function usePlayersQuery(teamId?: string) {
+export function usePlayersQuery(teamId: string | undefined) {
   return useQuery({
-    queryKey: teamId ? [...PLAYERS_QUERY_KEY, teamId] : PLAYERS_QUERY_KEY,
-    queryFn: () => playersApi.getAll(teamId),
+    queryKey: [...PLAYERS_QUERY_KEY, teamId],
+    queryFn: () => playersApi.getAll(teamId!),
+    enabled: !!teamId,
     staleTime: 5 * 60 * 1000, // 5 minutes
   })
 }
 
-export function usePlayerQuery(id: string, teamId?: string) {
+export function usePlayerQuery(athleteId: string | undefined, teamId: string | undefined) {
   return useQuery({
-    queryKey: [...PLAYERS_QUERY_KEY, id, teamId],
-    queryFn: () => playersApi.getById(id, teamId),
-    enabled: !!id,
+    queryKey: [...PLAYERS_QUERY_KEY, athleteId, teamId],
+    queryFn: () => playersApi.getById(athleteId!, teamId!),
+    enabled: !!athleteId && !!teamId,
     staleTime: 0, // Sempre refetch para garantir dados atualizados
     retry: 1, // Tentar apenas uma vez em caso de erro
   })
@@ -26,7 +27,8 @@ export function useCreatePlayerMutation() {
   const queryClient = useQueryClient()
 
   return useMutation({
-    mutationFn: (data: CreatePlayerDto) => playersApi.create(data),
+    mutationFn: ({ teamId, data }: { teamId: string; data: CreatePlayerDto }) =>
+      playersApi.create(teamId, data),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: PLAYERS_QUERY_KEY })
       toast.success('Jogador cadastrado com sucesso!')

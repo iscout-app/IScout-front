@@ -1,9 +1,11 @@
 import axios, { AxiosError } from 'axios'
 
-const API_BASE_URL = import.meta.env.VITE_API_URL || 'http://localhost:3000'
+// Use relative URL for Vite proxy to work (proxy configured in vite.config.ts)
+// In production, set VITE_API_URL to the actual API URL
+const API_BASE_URL = import.meta.env.VITE_API_URL || ''
 
 export const apiClient = axios.create({
-  baseURL: `${API_BASE_URL}/v1`,
+  baseURL: API_BASE_URL ? `${API_BASE_URL}/api/v1` : '/api/v1',
   headers: {
     'Content-Type': 'application/json',
   },

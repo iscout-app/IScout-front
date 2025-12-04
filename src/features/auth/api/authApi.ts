@@ -11,7 +11,6 @@ export const authApi = {
     return response.data
   },
 
-  async logout(): Promise<void> {
-    await apiClient.post(API_ENDPOINTS.auth.logout)
-  },
+  // Logout is handled client-side only
+  // Backend doesn't have logout endpoint
 }

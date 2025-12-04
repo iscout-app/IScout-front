@@ -7,10 +7,17 @@ import { PositionChart } from './components/PositionChart'
 import { CategoryChart } from './components/CategoryChart'
 import { TopPlayers } from './components/TopPlayers'
 import { RecentStats } from './components/RecentStats'
-import { Users, Calendar, TrendingUp, Target } from 'lucide-react'
+import { DashboardAlerts } from './components/DashboardAlerts'
+import { Users, Plus, BarChart3 } from 'lucide-react'
+import { Button } from '@/components/ui/button'
+import { useNavigate } from 'react-router-dom'
+import { useAuth } from '@/features/auth/context/AuthContext'
+import { USER_ROLE_LABELS } from '@/features/users/types/users.types'
 
 export default function Dashboard() {
   const { data, isLoading, error } = useDashboardQuery()
+  const navigate = useNavigate()
+  const { user } = useAuth()
 
   if (isLoading) {
     return (
@@ -40,59 +47,73 @@ export default function Dashboard() {
     )
   }
 
+  const userRoleLabel = user?.role ? USER_ROLE_LABELS[user.role] : 'Usuário'
+
   return (
-    <div className="space-y-6">
+    <div className="space-y-24">
       {/* Header */}
-      <div>
-        <h1 className="text-2xl font-bold">Dashboard</h1>
-        <p className="text-sm text-muted-foreground">
-          Visão geral do desempenho da equipe
-        </p>
+      <div className="flex items-start justify-between">
+        <div>
+          <h1 className="text-3xl font-bold tracking-tight">Bem-vindo, {userRoleLabel}</h1>
+          <p className="mt-8 text-muted-foreground">
+            Visão geral do sistema
+          </p>
+        </div>
+        <div className="flex gap-12">
+          <Button onClick={() => navigate('/jogadores/novo')} className="h-50">
+            <Plus className="h-18 w-18 mr-8" />
+            Novo Jogador
+          </Button>
+          <Button onClick={() => navigate('/estatisticas')} variant="outline" className="h-50">
+            <BarChart3 className="h-18 w-18 mr-8" />
+            Registrar Estatística
+          </Button>
+          <Button onClick={() => navigate('/jogadores')} variant="outline" className="h-50">
+            Ver Todos
+          </Button>
+        </div>
       </div>
 
       {/* Stats Overview */}
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-16 md:grid-cols-2 lg:grid-cols-4">
         <StatCard
-          icon={<Users className="h-5 w-5 text-primary" />}
+          icon={<Users className="h-32 w-32 text-blue-500" />}
           label="Total de Jogadores"
           value={data.totalPlayers}
-          subtitle="Cadastrados no sistema"
         />
         <StatCard
-          icon={<Calendar className="h-5 w-5 text-orange-500" />}
-          label="Eventos desta Semana"
+          icon={<BarChart3 className="h-32 w-32 text-orange-500" />}
+          label="Eventos Esta Semana"
           value={data.eventsThisWeek}
-          subtitle="Partidas e treinos"
         />
         <StatCard
-          icon={<TrendingUp className="h-5 w-5 text-green-500" />}
+          icon="⭐"
           label="Média Geral"
           value={data.overallAverage?.toFixed(1) ?? '0.0'}
-          subtitle="Desempenho da equipe"
         />
         <StatCard
-          icon={<Target className="h-5 w-5 text-purple-500" />}
-          label="Gols na Semana"
+          icon="⚽"
+          label="Gols Esta Semana"
           value={data.goalsThisWeek}
-          subtitle="Total marcado"
         />
       </div>
 
       {/* Charts Section */}
-      <div className="grid gap-6 lg:grid-cols-2">
+      <div className="grid gap-24 lg:grid-cols-2">
         <ActivityChart data={data.activityData} />
-        <PositionChart data={data.positionDistribution} />
-      </div>
-
-      {/* Category Performance */}
-      <div className="grid gap-6">
-        <CategoryChart data={data.categoryPerformance} />
-      </div>
-
-      {/* Top Players and Recent Matches */}
-      <div className="grid gap-6 lg:grid-cols-2">
         <TopPlayers players={data.topPerformers} />
-        <RecentStats matches={data.recentMatches} />
+      </div>
+
+      {/* Bottom Section */}
+      <div className="grid gap-24 lg:grid-cols-2">
+        <div className="space-y-24">
+          <RecentStats matches={data.recentMatches} />
+          <PositionChart data={data.positionDistribution} />
+        </div>
+        <div className="space-y-24">
+          <CategoryChart data={data.categoryPerformance} />
+          <DashboardAlerts players={data.topPerformers} />
+        </div>
       </div>
     </div>
   )

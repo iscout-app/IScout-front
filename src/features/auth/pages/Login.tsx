@@ -47,7 +47,7 @@ export default function Login() {
       <div className="w-full max-w-[420px]">
         {/* Logo Section */}
         <div className="text-center mb-48">
-          <div className="w-16 h-16 mx-auto mb-16 flex items-center justify-center text-3xl font-bold text-white rounded-lg shadow-lg bg-gradient-to-br from-primary to-teal-700">
+          <div className="w-16 h-16 mx-auto mb-16 flex items-center justify-center text-3xl font-bold text-white rounded-xl shadow-lg bg-green-600">
             ⚽
           </div>
           <h1 className="text-4xl font-bold text-foreground mb-8 tracking-tight">

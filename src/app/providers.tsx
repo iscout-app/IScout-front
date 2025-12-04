@@ -3,6 +3,7 @@ import { RouterProvider } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { Toaster } from 'react-hot-toast'
 import { AuthProvider } from '@/features/auth/context/AuthContext'
+import { TeamProvider } from '@/features/teams/context/TeamContext'
 import { router } from './router'
 
 // Create a client
@@ -38,32 +39,34 @@ export function Providers({ children }: ProvidersProps) {
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
-        <Suspense fallback={<LoadingFallback />}>
-          {children || <RouterProvider router={router} />}
-        </Suspense>
-        <Toaster
-          position="top-right"
-          toastOptions={{
-            duration: 4000,
-            style: {
-              background: 'hsl(var(--card))',
-              color: 'hsl(var(--card-foreground))',
-              border: '1px solid hsl(var(--border))',
-            },
-            success: {
-              iconTheme: {
-                primary: 'hsl(var(--success))',
-                secondary: 'white',
+        <TeamProvider>
+          <Suspense fallback={<LoadingFallback />}>
+            {children || <RouterProvider router={router} />}
+          </Suspense>
+          <Toaster
+            position="top-right"
+            toastOptions={{
+              duration: 4000,
+              style: {
+                background: 'hsl(var(--card))',
+                color: 'hsl(var(--card-foreground))',
+                border: '1px solid hsl(var(--border))',
               },
-            },
-            error: {
-              iconTheme: {
-                primary: 'hsl(var(--destructive))',
-                secondary: 'white',
+              success: {
+                iconTheme: {
+                  primary: 'hsl(var(--success))',
+                  secondary: 'white',
+                },
               },
-            },
-          }}
-        />
+              error: {
+                iconTheme: {
+                  primary: 'hsl(var(--destructive))',
+                  secondary: 'white',
+                },
+              },
+            }}
+          />
+        </TeamProvider>
       </AuthProvider>
     </QueryClientProvider>
   )

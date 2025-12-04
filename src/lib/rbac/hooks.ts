@@ -5,10 +5,12 @@ import { getRolePermissions, getRoleDisplayName } from './roles'
 
 /**
  * Hook to get current user's role
+ * Note: Backend doesn't have role field yet, so we default to 'admin' for team owners
  */
 export function useRole() {
   const { user } = useAuth()
-  return user?.role || null
+  // If user has role, use it, otherwise default to 'admin' (team owner has full permissions)
+  return user?.role || (user ? 'admin' : null)
 }
 
 /**

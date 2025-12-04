@@ -5,7 +5,7 @@ export interface User {
   id: string
   name: string
   email: string
-  role: Role
+  role?: Role // Optional - backend doesn't have this field yet
   createdAt?: string
   updatedAt?: string
 }

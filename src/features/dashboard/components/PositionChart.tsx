@@ -10,14 +10,19 @@ interface PositionChartProps {
 }
 
 const POSITION_COLORS = {
-  Goleiro: 'rgb(255, 99, 132)',
-  Zagueiro: 'rgb(54, 162, 235)',
-  'Lateral Direito': 'rgb(255, 206, 86)',
-  'Lateral Esquerdo': 'rgb(75, 192, 192)',
-  Volante: 'rgb(153, 102, 255)',
-  'Meio-Campo': 'rgb(255, 159, 64)',
-  Atacante: 'rgb(33, 128, 141)',
-  Ponta: 'rgb(201, 203, 207)',
+  Goleiro: 'rgb(20, 184, 166)',       // Teal-500 (cor primária)
+  Zagueiro: 'rgb(59, 130, 246)',      // Azul
+  'Lateral Direito': 'rgb(168, 85, 247)', // Roxo
+  'Lateral Esquerdo': 'rgb(236, 72, 153)', // Rosa vibrante
+  Volante: 'rgb(251, 146, 60)',       // Laranja
+  'Meio-Campo': 'rgb(34, 197, 94)',   // Verde
+  Meia: 'rgb(14, 165, 233)',          // Azul céu
+  'Meia-Atacante': 'rgb(244, 114, 182)', // Rosa claro
+  Atacante: 'rgb(239, 68, 68)',       // Vermelho
+  Ponta: 'rgb(234, 179, 8)',          // Amarelo
+  'Ponta-Direita': 'rgb(139, 92, 246)', // Violeta
+  'Ponta-Esquerda': 'rgb(6, 182, 212)', // Ciano
+  Centroavante: 'rgb(220, 38, 38)',   // Vermelho escuro
 }
 
 export function PositionChart({ data }: PositionChartProps) {
@@ -38,12 +43,13 @@ export function PositionChart({ data }: PositionChartProps) {
   const options = {
     responsive: true,
     maintainAspectRatio: false,
+    cutout: '60%',
     plugins: {
       legend: {
-        position: 'right' as const,
+        position: 'bottom' as const,
         labels: {
           usePointStyle: true,
-          padding: 12,
+          padding: 15,
           font: {
             size: 11,
             family: "'Inter', -apple-system, sans-serif",
@@ -51,7 +57,7 @@ export function PositionChart({ data }: PositionChartProps) {
           generateLabels: (chart: ChartJS) => {
             const datasets = chart.data.datasets
             return chart.data.labels?.map((label, i) => ({
-              text: `${label} (${datasets[0].data[i]})`,
+              text: `${label}`,
               fillStyle: datasets[0].backgroundColor?.[i] as string,
               hidden: false,
               index: i,
@@ -82,7 +88,8 @@ export function PositionChart({ data }: PositionChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Distribuição por Posição</CardTitle>
+        <CardTitle className="text-base">Jogadores por Posição</CardTitle>
+        <p className="text-sm text-muted-foreground">Distribuição atual</p>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">

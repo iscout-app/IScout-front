@@ -4,7 +4,6 @@ import type { Player } from '../types/player.types'
 export interface CreatePlayerDto {
   name: string
   birthdate: string
-  teamId: string
   position: string
   shirtNumber: number
 }
@@ -16,52 +15,87 @@ export interface UpdatePlayerDto {
   shirtNumber?: number
 }
 
+// Backend athlete structure from athleteCareer
+interface AthleteCareerResponse {
+  athleteId: string
+  teamId: string
+  shirtNumber: number
+  position: string
+  matches: number
+  goals: number
+  assists: number
+  yellowCards: number
+  redCards: number
+  startedAt: string
+  updatedAt?: string
+  finishedAt?: string
+  athlete: {
+    id: string
+    name: string
+    birthdate: string
+  }
+}
+
+// Transform backend athlete to frontend player
+function transformAthleteToPlayer(athleteCareer: AthleteCareerResponse): Player {
+  return {
+    id: athleteCareer.athlete.id,
+    name: athleteCareer.athlete.name,
+    birthdate: athleteCareer.athlete.birthdate,
+    position: athleteCareer.position,
+    shirtNumber: athleteCareer.shirtNumber,
+    teamId: athleteCareer.teamId,
+    stats: {
+      matches: athleteCareer.matches,
+      goals: athleteCareer.goals,
+      assists: athleteCareer.assists,
+      yellowCards: athleteCareer.yellowCards,
+      redCards: athleteCareer.redCards,
+    },
+  }
+}
+
 export const playersApi = {
-  getAll: async (teamId?: string) => {
-    const params = teamId ? { teamId } : {}
-    const response = await apiClient.get<{ success: boolean; data: Player[] }>(
-      '/athletes',
-      { params }
+  getAll: async (teamId: string) => {
+    const response = await apiClient.get<AthleteCareerResponse[]>(
+      `/teams/${teamId}/athletes`
     )
-    return response.data.data
+
+    // Handle both wrapped and unwrapped responses
+    const data = Array.isArray(response.data) ? response.data : (response.data as any).data || []
+    return data.map(transformAthleteToPlayer)
   },
 
-  getById: async (id: string, teamId?: string) => {
-    const params = teamId ? { teamId } : {}
-    const response = await apiClient.get<{ success: boolean; data: Player; error?: string }>(
-      `/athletes/${id}`,
-      { params }
-    )
+  getById: async (athleteId: string, teamId: string) => {
+    // Backend doesn't have a direct athlete endpoint, fetch all and filter
+    const athletes = await playersApi.getAll(teamId)
+    const athlete = athletes.find((a) => a.id === athleteId)
 
-    if (!response.data.success || !response.data.data) {
-      throw new Error(response.data.error || 'Jogador não encontrado')
+    if (!athlete) {
+      throw new Error('Jogador não encontrado')
     }
 
-    return response.data.data
+    return athlete
   },
 
-  create: async (data: CreatePlayerDto) => {
-    const response = await apiClient.post<{ success: boolean; data: Player }>(
-      '/athletes',
+  create: async (teamId: string, data: CreatePlayerDto) => {
+    const response = await apiClient.post<AthleteCareerResponse>(
+      `/teams/${teamId}/athletes`,
       data
     )
-    return response.data.data
+
+    const athleteData = (response.data as any).data || response.data
+    return transformAthleteToPlayer(athleteData)
   },
 
-  update: async (id: string, teamId: string, data: UpdatePlayerDto) => {
-    const response = await apiClient.put<{ success: boolean; data: Player }>(
-      `/athletes/${id}`,
-      data,
-      { params: { teamId } }
-    )
-    return response.data.data
+  update: async (athleteId: string, teamId: string, data: UpdatePlayerDto) => {
+    // Backend doesn't have update athlete endpoint yet
+    // For now, we'll need to handle this differently or wait for backend implementation
+    throw new Error('Atualização de jogador ainda não implementada no backend')
   },
 
-  delete: async (id: string, teamId: string) => {
-    const response = await apiClient.delete<{ success: boolean; message: string }>(
-      `/athletes/${id}`,
-      { params: { teamId } }
-    )
-    return response.data
+  delete: async (athleteId: string, teamId: string) => {
+    // Backend doesn't have delete athlete endpoint yet
+    throw new Error('Exclusão de jogador ainda não implementada no backend')
   },
 }

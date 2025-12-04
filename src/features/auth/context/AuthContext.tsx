@@ -76,8 +76,10 @@ export function AuthProvider({ children }: AuthProviderProps) {
     setUser(null)
     sessionStorage.removeItem(AUTH_STORAGE_KEY)
 
-    // Optionally call logout endpoint
-    authApi.logout().catch(console.error)
+    // Backend doesn't have logout endpoint yet
+    // JWT cookie will expire after 1 day
+    // Redirect to login
+    window.location.href = '/login'
   }
 
   const value: AuthContextType = {

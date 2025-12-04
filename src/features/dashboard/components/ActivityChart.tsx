@@ -24,18 +24,18 @@ export function ActivityChart({ data }: ActivityChartProps) {
     labels: data.labels,
     datasets: [
       {
-        label: 'Eventos',
-        data: data.events,
-        borderColor: 'rgb(33, 128, 141)',
-        backgroundColor: 'rgba(33, 128, 141, 0.1)',
+        label: 'Treinos',
+        data: data.training,
+        borderColor: 'rgb(100, 100, 100)',
+        backgroundColor: 'rgba(100, 100, 100, 0.1)',
         fill: true,
         tension: 0.4,
       },
       {
-        label: 'Gols',
-        data: data.goals,
-        borderColor: 'rgb(255, 159, 64)',
-        backgroundColor: 'rgba(255, 159, 64, 0.1)',
+        label: 'Partidas',
+        data: data.matches,
+        borderColor: 'rgb(33, 128, 141)',
+        backgroundColor: 'rgba(33, 128, 141, 0.1)',
         fill: true,
         tension: 0.4,
       },
@@ -52,7 +52,7 @@ export function ActivityChart({ data }: ActivityChartProps) {
           usePointStyle: true,
           padding: 15,
           font: {
-            size: 12,
+            size: 11,
             family: "'Inter', -apple-system, sans-serif",
           },
         },
@@ -73,22 +73,26 @@ export function ActivityChart({ data }: ActivityChartProps) {
       y: {
         beginAtZero: true,
         grid: {
-          color: 'rgba(0, 0, 0, 0.05)',
+          color: 'rgba(0, 0, 0, 0.04)',
+          drawBorder: false,
         },
         ticks: {
           font: {
-            size: 11,
+            size: 10,
           },
+          padding: 8,
         },
       },
       x: {
         grid: {
           display: false,
+          drawBorder: false,
         },
         ticks: {
           font: {
-            size: 11,
+            size: 10,
           },
+          padding: 8,
         },
       },
     },
@@ -97,7 +101,8 @@ export function ActivityChart({ data }: ActivityChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Atividade Semanal</CardTitle>
+        <CardTitle className="text-base">Atividade Recente</CardTitle>
+        <p className="text-sm text-muted-foreground">Últimos 7 dias</p>
       </CardHeader>
       <CardContent>
         <div className="h-[300px]">
