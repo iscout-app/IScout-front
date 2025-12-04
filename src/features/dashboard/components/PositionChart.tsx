@@ -9,6 +9,7 @@ interface PositionChartProps {
   data: PositionDistribution[]
 }
 
+
 const POSITION_COLORS: Record<string, string> = {
   "goleiro": 'rgb(20, 184, 166)',    // Teal-500 (cor primária)
   "Goleiro": 'rgb(20, 184, 166)',    // Teal-500 (alternativa capitalizada)

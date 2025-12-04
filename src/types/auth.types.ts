@@ -1,5 +1,12 @@
 export type Role = 'admin' | 'tecnico' | 'olheiro' | 'responsavel'
 
+export const USER_ROLE_LABELS: Record<Role, string> = {
+  admin: 'Administrador',
+  tecnico: 'Técnico',
+  olheiro: 'Olheiro',
+  responsavel: 'Responsável',
+}
+
 // Authentication types
 export interface User {
   id: string

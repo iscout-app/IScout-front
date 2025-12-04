@@ -45,6 +45,8 @@ export function TeamFormModal({ isOpen, onClose, teamId }: TeamFormModalProps) {
     handleSubmit,
     formState: { errors, isSubmitting },
     reset,
+    setValue,
+    watch,
   } = useForm<TeamFormData>({
     resolver: zodResolver(teamFormSchema),
     defaultValues: {
@@ -55,6 +57,9 @@ export function TeamFormModal({ isOpen, onClose, teamId }: TeamFormModalProps) {
       secondaryColorHex: '',
     },
   })
+
+  const mainColorHex = watch('mainColorHex')
+  const secondaryColorHex = watch('secondaryColorHex')
 
   // Reset form when modal opens/closes or when team data loads
   useEffect(() => {
@@ -170,25 +175,22 @@ export function TeamFormModal({ isOpen, onClose, teamId }: TeamFormModalProps) {
           <div className="grid gap-16 md:grid-cols-2">
             {/* Main Color */}
             <div className="space-y-8">
-              <Label htmlFor="mainColorHex">Cor Principal (Hex)</Label>
+              <Label htmlFor="mainColorHex">Cor Principal</Label>
               <div className="flex gap-8">
                 <Input
                   id="mainColorHex"
                   {...register('mainColorHex')}
-                  className="h-100"
+                  className="h-100 flex-1"
                   placeholder="FF0000"
                   maxLength={6}
                 />
-                {register('mainColorHex').name && (
-                  <div
-                    className="h-100 w-100 rounded border"
-                    style={{
-                      backgroundColor: errors.mainColorHex
-                        ? '#e5e7eb'
-                        : `#${register('mainColorHex').name || 'e5e7eb'}`,
-                    }}
-                  />
-                )}
+                <input
+                  type="color"
+                  value={mainColorHex ? `#${mainColorHex}` : '#14b8a6'}
+                  onChange={(e) => setValue('mainColorHex', e.target.value.substring(1).toUpperCase())}
+                  className="h-100 w-100 rounded border cursor-pointer"
+                  title="Escolher cor"
+                />
               </div>
               {errors.mainColorHex && (
                 <p className="text-sm text-destructive">{errors.mainColorHex.message}</p>
@@ -197,25 +199,22 @@ export function TeamFormModal({ isOpen, onClose, teamId }: TeamFormModalProps) {
 
             {/* Secondary Color */}
             <div className="space-y-8">
-              <Label htmlFor="secondaryColorHex">Cor Secundária (Hex)</Label>
+              <Label htmlFor="secondaryColorHex">Cor Secundária</Label>
               <div className="flex gap-8">
                 <Input
                   id="secondaryColorHex"
                   {...register('secondaryColorHex')}
-                  className="h-100"
+                  className="h-100 flex-1"
                   placeholder="000000"
                   maxLength={6}
                 />
-                {register('secondaryColorHex').name && (
-                  <div
-                    className="h-100 w-100 rounded border"
-                    style={{
-                      backgroundColor: errors.secondaryColorHex
-                        ? '#e5e7eb'
-                        : `#${register('secondaryColorHex').name || 'e5e7eb'}`,
-                    }}
-                  />
-                )}
+                <input
+                  type="color"
+                  value={secondaryColorHex ? `#${secondaryColorHex}` : '#0d9488'}
+                  onChange={(e) => setValue('secondaryColorHex', e.target.value.substring(1).toUpperCase())}
+                  className="h-100 w-100 rounded border cursor-pointer"
+                  title="Escolher cor"
+                />
               </div>
               {errors.secondaryColorHex && (
                 <p className="text-sm text-destructive">

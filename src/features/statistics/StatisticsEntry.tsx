@@ -169,6 +169,11 @@ export default function StatisticsEntry() {
       return
     }
 
+    // Prevent duplicate submissions
+    if (isSubmitting) {
+      return
+    }
+
     setIsSubmitting(true)
     try {
       // Step 1: Create training
@@ -215,13 +220,9 @@ export default function StatisticsEntry() {
       await queryClient.invalidateQueries({ queryKey: ['players'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
-      // Smart reset: preserve player and date
-      trainingForm.reset({
-        ...defaultTrainingValues,
-        athleteId: data.athleteId,
-        eventDate: data.eventDate,
-        eventType: 'treino',
-      } as any)
+      // Reset form completely
+      trainingForm.reset(defaultTrainingValues as any)
+      setEventType('')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao registrar treino')
       console.error('Training submission error:', error)
@@ -233,6 +234,11 @@ export default function StatisticsEntry() {
   const onSubmitMatch = async (data: MatchFormData) => {
     if (!currentTeam) {
       toast.error('Nenhum time selecionado')
+      return
+    }
+
+    // Prevent duplicate submissions
+    if (isSubmitting) {
       return
     }
 
@@ -271,13 +277,9 @@ export default function StatisticsEntry() {
       await queryClient.invalidateQueries({ queryKey: ['players'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
 
-      // Smart reset: preserve player and date
-      matchForm.reset({
-        ...defaultMatchValues,
-        athleteId: data.athleteId,
-        eventDate: data.eventDate,
-        eventType: 'partida',
-      } as any)
+      // Reset form completely
+      matchForm.reset(defaultMatchValues as any)
+      setEventType('')
     } catch (error: any) {
       toast.error(error.message || 'Erro ao registrar partida')
       console.error('Match submission error:', error)
@@ -377,7 +379,7 @@ export default function StatisticsEntry() {
                         ) : (
                           players?.map((player: any) => (
                             <SelectItem key={player.id} value={player.id}>
-                              {player.name} - #{player.shirtNumber}
+                              {player.name} - {player.position} (#{player.shirtNumber})
                             </SelectItem>
                           ))
                         )}
@@ -867,17 +869,18 @@ export default function StatisticsEntry() {
 
             {/* Form Actions */}
             <div className="flex justify-end gap-12">
-              <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} disabled={isSubmitting}>
+              <Button type="button" variant="secondary" onClick={() => navigate('/dashboard')} disabled={isSubmitting} className="h-50">
                 Cancelar
               </Button>
-              <Button type="submit" disabled={isSubmitting || !eventType} className="h-50">
-                {isSubmitting
-                  ? eventType === 'treino'
-                    ? 'Registrando Treino...'
-                    : 'Registrando Partida...'
-                  : eventType === 'treino'
-                    ? 'Registrar Treino'
-                    : 'Registrar Partida'}
+              <Button type="submit" disabled={isSubmitting || !eventType} className="h-50 min-w-[200px]">
+                {isSubmitting ? (
+                  <span className="flex items-center gap-8">
+                    <span className="h-16 w-16 animate-spin rounded-full border-2 border-current border-t-transparent" />
+                    {eventType === 'treino' ? 'Registrando...' : 'Registrando...'}
+                  </span>
+                ) : (
+                  eventType === 'treino' ? 'Registrar Treino' : 'Registrar Partida'
+                )}
               </Button>
             </div>
           </>

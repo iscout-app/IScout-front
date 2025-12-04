@@ -35,11 +35,20 @@ export const historyApi = {
 
     const [trainingsResponse, matchesResponse, playerStatsResponse] = await Promise.all([
       apiClient.get(`/teams/${teamId}/trainings`),
-      apiClient.get(`/matches`),
+      apiClient.get(`/matches`, { params: { teamId } }),
       apiClient.get(`/teams/${teamId}/athletes/${athleteId}/stats`),
     ])
 
     const stats = playerStatsResponse.data
+
+    // Extract data from response - check if it's wrapped in {success, data} or direct array
+    const trainings = Array.isArray(trainingsResponse.data)
+      ? trainingsResponse.data
+      : (trainingsResponse.data.data || trainingsResponse.data)
+
+    const matches = Array.isArray(matchesResponse.data)
+      ? matchesResponse.data
+      : (matchesResponse.data.data || matchesResponse.data)
 
     return {
       player: {
@@ -56,8 +65,8 @@ export const historyApi = {
           redCards: stats.stats.redCards,
         },
       },
-      trainings: trainingsResponse.data.data || [],
-      matches: matchesResponse.data.data || [],
+      trainings,
+      matches,
     }
   },
 }

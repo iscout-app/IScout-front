@@ -106,27 +106,36 @@ export function PlayerSelector({
             </div>
           ) : (
             <div className="grid grid-cols-1 gap-12 md:grid-cols-2 lg:grid-cols-3">
-              {filteredPlayers.map((player) => (
-                <div
-                  key={player.id}
-                  className="flex items-center gap-12 p-16 rounded-lg border hover:bg-muted/50 cursor-pointer"
-                  onClick={() => onTogglePlayer(player.id)}
-                >
-                  <Checkbox
-                    checked={selectedPlayerIds.includes(player.id)}
-                    onCheckedChange={() => onTogglePlayer(player.id)}
-                    className="flex-shrink-0"
-                  />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold truncate">{player.name}</p>
-                    <div className="flex items-center gap-8 mt-4">
-                      <span className="text-xs text-muted-foreground">{player.position}</span>
-                      <span className="text-xs text-muted-foreground">•</span>
-                      <span className="text-xs text-muted-foreground">#{player.shirtNumber}</span>
+              {filteredPlayers.map((player) => {
+                const isSelected = selectedPlayerIds.includes(player.id)
+                return (
+                  <div
+                    key={player.id}
+                    className={`flex items-center gap-12 p-16 rounded-lg border cursor-pointer transition-all ${
+                      isSelected
+                        ? 'bg-primary/10 border-primary hover:bg-primary/15'
+                        : 'border-border hover:bg-muted/50'
+                    }`}
+                    onClick={() => onTogglePlayer(player.id)}
+                  >
+                    <Checkbox
+                      checked={isSelected}
+                      onCheckedChange={() => onTogglePlayer(player.id)}
+                      className="flex-shrink-0"
+                    />
+                    <div className="flex-1 min-w-0">
+                      <p className={`font-semibold truncate ${isSelected ? 'text-primary' : ''}`}>
+                        {player.name}
+                      </p>
+                      <div className="flex items-center gap-8 mt-4">
+                        <span className="text-xs text-muted-foreground">{player.position}</span>
+                        <span className="text-xs text-muted-foreground">•</span>
+                        <span className="text-xs text-muted-foreground">#{player.shirtNumber}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
+                )
+              })}
             </div>
           )}
         </CardContent>

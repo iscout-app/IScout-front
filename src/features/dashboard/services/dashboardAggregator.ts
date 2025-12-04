@@ -108,21 +108,12 @@ export class DashboardAggregator {
   }
 
   /**
-   * Calculate recent matches (mock data for now, as we need matchAthletes join)
+   * Calculate recent matches (returns empty until matchAthletes data is available)
    */
-  private static calculateRecentMatches(players: Player[], _matches: Match[]): RecentMatch[] {
-    // For now, return last 5 players with their stats as "recent matches"
-    // In a real implementation, we'd join matchAthletes data
-    return players.slice(0, 5).map((p) => ({
-      id: p.id,
-      playerId: p.id,
-      playerName: p.name,
-      eventType: 'partida' as const,
-      date: new Date().toISOString(),
-      goals: Math.floor(Math.random() * 3),
-      assists: Math.floor(Math.random() * 2),
-      rating: Math.random() * 10,
-    }))
+  private static calculateRecentMatches(_players: Player[], _matches: Match[]): RecentMatch[] {
+    // TODO: Implement real logic when matchAthletes endpoint is available
+    // For now, return empty array to avoid showing fake data
+    return []
   }
 
   /**

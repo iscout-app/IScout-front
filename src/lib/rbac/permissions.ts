@@ -1,10 +1,6 @@
 import type { Permission, PermissionsMap, Role } from '@/types/permissions.types'
 
 export const PERMISSIONS: PermissionsMap = {
-  // Gestão do Sistema (apenas Admin)
-  CADASTRAR_USUARIO: ['admin'],
-  GERENCIAR_PERFIS: ['admin'],
-
   // CSU02 - Cadastrar Jogador
   CADASTRAR_JOGADOR: ['admin', 'tecnico', 'olheiro'],
 

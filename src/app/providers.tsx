@@ -48,20 +48,35 @@ export function Providers({ children }: ProvidersProps) {
             toastOptions={{
               duration: 4000,
               style: {
-                background: 'hsl(var(--card))',
-                color: 'hsl(var(--card-foreground))',
-                border: '1px solid hsl(var(--border))',
+                padding: '16px',
+                borderRadius: '8px',
+                fontSize: '14px',
+                fontWeight: '500',
+                boxShadow: '0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06)',
+                maxWidth: '400px',
               },
               success: {
+                duration: 3000,
+                style: {
+                  background: '#10b981',
+                  color: 'white',
+                  border: '2px solid #059669',
+                },
                 iconTheme: {
-                  primary: 'hsl(var(--success))',
-                  secondary: 'white',
+                  primary: 'white',
+                  secondary: '#10b981',
                 },
               },
               error: {
+                duration: 5000,
+                style: {
+                  background: '#ef4444',
+                  color: 'white',
+                  border: '2px solid #dc2626',
+                },
                 iconTheme: {
-                  primary: 'hsl(var(--destructive))',
-                  secondary: 'white',
+                  primary: 'white',
+                  secondary: '#ef4444',
                 },
               },
             }}

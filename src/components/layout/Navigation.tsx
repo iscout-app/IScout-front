@@ -17,7 +17,6 @@ const NAV_ITEMS: NavItem[] = [
   { label: 'Evolução', href: '/evolution', permission: 'VISUALIZAR_EVOLUCAO' },
   { label: 'Relatórios', href: '/reports', permission: 'RELATORIOS_INDIVIDUAIS' },
   { label: 'Times', href: '/teams', permission: null },
-  { label: 'Usuários', href: '/users', permission: 'CADASTRAR_USUARIO' },
 ]
 
 function NavLink({ item }: { item: NavItem }) {

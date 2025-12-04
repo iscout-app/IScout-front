@@ -3,8 +3,6 @@ import { type Role } from './auth.types'
 export type { Role }
 
 export type Permission =
-  | 'CADASTRAR_USUARIO'
-  | 'GERENCIAR_PERFIS'
   | 'CADASTRAR_JOGADOR'
   | 'REGISTRAR_ESTATISTICA'
   | 'VISUALIZAR_HISTORICO'

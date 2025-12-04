@@ -43,7 +43,7 @@ export function PlayerSelector({
         ) : players && players.length > 0 ? (
           players.map((player: Player) => (
             <SelectItem key={player.id} value={player.id}>
-              {player.name} - #{player.shirtNumber} ({player.position})
+              {player.name} - {player.position} (#{player.shirtNumber})
             </SelectItem>
           ))
         ) : (

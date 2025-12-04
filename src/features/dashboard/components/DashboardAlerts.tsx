@@ -45,9 +45,9 @@ export function DashboardAlerts({ players }: DashboardAlertsProps) {
       <CardContent>
         <div className="space-y-12">
           {alerts.length === 0 ? (
-            <div className="flex items-center gap-12 p-16 rounded-lg bg-green-50 dark:bg-green-950/20 border border-green-200 dark:border-green-900">
+            <div className="flex items-center gap-12 p-16 rounded-lg bg-green-50 border border-green-200">
               <Info className="h-20 w-20 text-green-600 flex-shrink-0" />
-              <p className="text-sm text-green-800 dark:text-green-300">
+              <p className="text-sm text-green-800">
                 Nenhum alerta no momento
               </p>
             </div>
@@ -57,20 +57,20 @@ export function DashboardAlerts({ players }: DashboardAlertsProps) {
                 key={index}
                 className={`flex items-start gap-12 p-16 rounded-lg border ${
                   alert.type === 'warning'
-                    ? 'bg-yellow-50 dark:bg-yellow-950/20 border-yellow-200 dark:border-yellow-900'
-                    : 'bg-blue-50 dark:bg-blue-950/20 border-blue-200 dark:border-blue-900'
+                    ? 'bg-yellow-50 border-yellow-300'
+                    : 'bg-blue-50 border-blue-300'
                 }`}
               >
                 {alert.type === 'warning' ? (
-                  <AlertTriangle className="h-16 w-16 text-yellow-600 flex-shrink-0 mt-2" />
+                  <AlertTriangle className="h-16 w-16 text-yellow-700 flex-shrink-0 mt-2" />
                 ) : (
-                  <Info className="h-16 w-16 text-blue-600 flex-shrink-0 mt-2" />
+                  <Info className="h-16 w-16 text-blue-700 flex-shrink-0 mt-2" />
                 )}
                 <p
-                  className={`text-sm ${
+                  className={`text-sm font-medium ${
                     alert.type === 'warning'
-                      ? 'text-yellow-800 dark:text-yellow-300'
-                      : 'text-blue-800 dark:text-blue-300'
+                      ? 'text-yellow-900'
+                      : 'text-blue-900'
                   }`}
                 >
                   {alert.message}

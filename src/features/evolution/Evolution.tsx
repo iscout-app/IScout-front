@@ -33,6 +33,22 @@ function calculateAge(birthdate: string): number {
   return age
 }
 
+function getAgeCategory(birthdate: string): string {
+  const age = calculateAge(birthdate)
+
+  if (age > 23) {
+    return 'PROFISSIONAL'
+  }
+
+  // Categorias de base: SUB-11, SUB-13, SUB-15, SUB-17, SUB-20, SUB-23
+  if (age <= 11) return 'SUB-11'
+  if (age <= 13) return 'SUB-13'
+  if (age <= 15) return 'SUB-15'
+  if (age <= 17) return 'SUB-17'
+  if (age <= 20) return 'SUB-20'
+  return 'SUB-23'
+}
+
 export default function Evolution() {
   const { currentTeam } = useTeam()
   const { data: players } = usePlayersQuery(currentTeam?.id)
@@ -52,7 +68,7 @@ export default function Evolution() {
     // Process trainings
     historyData.trainings?.forEach((training: any) => {
       training.classes?.forEach((trainingClass: any) => {
-        const athleteStats = trainingClass.athletes?.find((a: any) => a.athleteId === selectedPlayerId)
+        const athleteStats = trainingClass.athleteStats?.find((a: any) => a.athleteId === selectedPlayerId)
         if (athleteStats) {
           events.push({
             date: training.date,
@@ -172,7 +188,7 @@ export default function Evolution() {
             <SelectContent>
               {players?.map((player: any) => (
                 <SelectItem key={player.id} value={player.id}>
-                  {player.name} - {player.position}
+                  {player.name} - {player.position} (#{player.shirtNumber})
                 </SelectItem>
               ))}
             </SelectContent>
@@ -201,7 +217,7 @@ export default function Evolution() {
                 <div>
                   <span className="font-medium">CATEGORIA</span>
                   <p className="text-foreground">
-                    SUB-{Math.floor(calculateAge(selectedPlayer.birthdate) / 2) * 2 + 1}
+                    {getAgeCategory(selectedPlayer.birthdate)}
                   </p>
                 </div>
                 <div>
