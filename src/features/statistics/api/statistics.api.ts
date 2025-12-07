@@ -13,7 +13,8 @@ export interface CreateTrainingClassDto {
 
 export interface AthleteTrainingStatsDto {
   athleteId: string
-  stats: Record<string, any> // Flexible JSON object for any stats
+  notes?: string
+  stats?: Record<string, any> // Flexible JSON object for any stats
 }
 
 export interface Training {

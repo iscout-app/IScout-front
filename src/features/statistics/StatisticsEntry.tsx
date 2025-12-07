@@ -228,9 +228,14 @@ export default function StatisticsEntry() {
     } catch (error: any) {
       // Show specific validation errors if available
       if (error instanceof z.ZodError) {
-        const firstError = error.errors[0]
-        const fieldName = firstError.path.join('.')
-        toast.error(`${fieldName}: ${firstError.message}`)
+        const issues = error.issues || (error as any).errors || []
+        if (issues.length > 0) {
+          const firstError = issues[0]
+          const fieldName = firstError.path?.join('.') || 'campo'
+          toast.error(`${fieldName}: ${firstError.message}`)
+        } else {
+          toast.error('Erro de validação')
+        }
       } else {
         toast.error(error.message || 'Erro ao registrar treino')
       }
@@ -293,9 +298,14 @@ export default function StatisticsEntry() {
     } catch (error: any) {
       // Show specific validation errors if available
       if (error instanceof z.ZodError) {
-        const firstError = error.errors[0]
-        const fieldName = firstError.path.join('.')
-        toast.error(`${fieldName}: ${firstError.message}`)
+        const issues = error.issues || (error as any).errors || []
+        if (issues.length > 0) {
+          const firstError = issues[0]
+          const fieldName = firstError.path?.join('.') || 'campo'
+          toast.error(`${fieldName}: ${firstError.message}`)
+        } else {
+          toast.error('Erro de validação')
+        }
       } else {
         toast.error(error.message || 'Erro ao registrar partida')
       }
