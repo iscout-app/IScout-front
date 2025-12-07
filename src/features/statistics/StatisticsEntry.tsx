@@ -28,9 +28,9 @@ const trainingFormSchema = z.object({
       today.setHours(23, 59, 59, 999)
       return selectedDate <= today
     }, 'A data não pode ser no futuro'),
-  trainingTitle: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(255, 'Título muito longo'),
+  trainingTitle: z.string().min(3, 'Título deve ter no mínimo 3 caracteres').max(1024, 'Título deve ter no máximo 1024 caracteres'),
   trainingDescription: z.string().max(4096, 'Descrição muito longa').optional(),
-  minutesPlayed: z.number().int().min(0, 'Minutos não pode ser negativo').max(120, 'Máximo de 120 minutos'),
+  minutesPlayed: z.number().int().min(0, 'Minutos não pode ser negativo').max(240, 'Máximo de 240 minutos'),
   // Offensive stats
   goals: z.number().int().min(0, 'Gols não pode ser negativo'),
   assists: z.number().int().min(0, 'Assistências não pode ser negativo'),
@@ -69,10 +69,11 @@ const matchFormSchema = z.object({
     }, 'A data não pode ser no futuro'),
   eventTime: z.string().regex(/^\d{2}:\d{2}$/, 'Hora inválida (formato: HH:MM)'),
   opponentTeamId: z.string().uuid('Time adversário é obrigatório'),
+  opponentTeamName: z.string().optional(),
   isHomeTeam: z.boolean(),
   homeScore: z.number().int().min(0, 'Placar não pode ser negativo'),
   awayScore: z.number().int().min(0, 'Placar não pode ser negativo'),
-  position: z.string().min(1, 'Posição é obrigatória'),
+  position: z.string().min(2, 'Posição deve ter no mínimo 2 caracteres'),
   goals: z.number().int().min(0, 'Gols não pode ser negativo'),
   assists: z.number().int().min(0, 'Assistências não pode ser negativo'),
   yellowCards: z.number().int().min(0, 'Cartões não pode ser negativo').max(2, 'Máximo de 2 cartões amarelos'),
@@ -206,11 +207,11 @@ export default function StatisticsEntry() {
         foulsCommitted: data.foulsCommitted,
         foulsSuffered: data.foulsSuffered,
         performanceRating: data.performanceRating,
-        observations: data.observations,
       }
 
       await trainingsApi.addAthleteStats(currentTeam.id, training.id, trainingClass.id, {
         athleteId: data.athleteId,
+        notes: data.observations || undefined,
         stats,
       })
 
@@ -219,12 +220,20 @@ export default function StatisticsEntry() {
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ['players'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      await queryClient.invalidateQueries({ queryKey: ['history'] })
 
       // Reset form completely
       trainingForm.reset(defaultTrainingValues as any)
       setEventType('')
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao registrar treino')
+      // Show specific validation errors if available
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0]
+        const fieldName = firstError.path.join('.')
+        toast.error(`${fieldName}: ${firstError.message}`)
+      } else {
+        toast.error(error.message || 'Erro ao registrar treino')
+      }
       console.error('Training submission error:', error)
     } finally {
       setIsSubmitting(false)
@@ -276,12 +285,20 @@ export default function StatisticsEntry() {
       // Invalidate queries to refresh data
       await queryClient.invalidateQueries({ queryKey: ['players'] })
       await queryClient.invalidateQueries({ queryKey: ['dashboard'] })
+      await queryClient.invalidateQueries({ queryKey: ['history'] })
 
       // Reset form completely
       matchForm.reset(defaultMatchValues as any)
       setEventType('')
     } catch (error: any) {
-      toast.error(error.message || 'Erro ao registrar partida')
+      // Show specific validation errors if available
+      if (error instanceof z.ZodError) {
+        const firstError = error.errors[0]
+        const fieldName = firstError.path.join('.')
+        toast.error(`${fieldName}: ${firstError.message}`)
+      } else {
+        toast.error(error.message || 'Erro ao registrar partida')
+      }
       console.error('Match submission error:', error)
     } finally {
       setIsSubmitting(false)
@@ -454,7 +471,7 @@ export default function StatisticsEntry() {
                         {...trainingForm.register('minutesPlayed', { valueAsNumber: true })}
                         placeholder="90"
                         min="0"
-                        max="120"
+                        max="240"
                         className={`h-100 ${trainingForm.formState.errors.minutesPlayed ? 'border-destructive' : ''}`}
                       />
                       {trainingForm.formState.errors.minutesPlayed && (

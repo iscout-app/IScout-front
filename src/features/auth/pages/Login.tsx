@@ -37,7 +37,9 @@ export default function Login() {
       toast.success('Login realizado com sucesso!')
       navigate('/dashboard')
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Erro ao fazer login')
+      // Show the error message from the API or a generic message
+      const errorMessage = error instanceof Error ? error.message : 'Erro ao fazer login'
+      toast.error(errorMessage)
     } finally {
       setIsLoading(false)
     }

@@ -83,7 +83,7 @@ export function CategoryChart({ data }: CategoryChartProps) {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="text-base">Desempenho por Categoria</CardTitle>
+        <CardTitle className="text-base">Desempenho por Posição</CardTitle>
         <p className="text-sm text-muted-foreground">Média de notas</p>
       </CardHeader>
       <CardContent>

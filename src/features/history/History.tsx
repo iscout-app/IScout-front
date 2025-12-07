@@ -7,6 +7,7 @@ import { usePlayersQuery } from '@/features/players/hooks/usePlayersQuery'
 import { usePlayerHistoryQuery } from './hooks/useHistoryQuery'
 import { useTeam } from '@/features/teams/context/TeamContext'
 import { Target, Users, BarChart3, Star } from 'lucide-react'
+import { calculateRating } from '@/features/statistics/services/ratingCalculator'
 
 function calculateAge(birthdate: string): number {
   const birth = new Date(birthdate)
@@ -77,6 +78,14 @@ export default function History() {
         const isHome = match.homeTeamId === currentTeam?.id
         const score = `${match.homeScore}x${match.awayScore}`
 
+        // Calculate rating using the unified formula
+        const performanceRating = calculateRating(
+          athletePerformance.goals,
+          athletePerformance.assists,
+          athletePerformance.yellowCards,
+          athletePerformance.redCards
+        )
+
         events.push({
           id: `match-${match.id}`,
           type: 'partida',
@@ -88,6 +97,7 @@ export default function History() {
             assists: athletePerformance.assists,
             yellowCards: athletePerformance.yellowCards,
             redCards: athletePerformance.redCards,
+            performanceRating,
           },
           observations: athletePerformance.observations,
         })

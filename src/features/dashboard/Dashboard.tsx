@@ -7,7 +7,6 @@ import { PositionChart } from './components/PositionChart'
 import { CategoryChart } from './components/CategoryChart'
 import { TopPlayers } from './components/TopPlayers'
 import { RecentStats } from './components/RecentStats'
-import { DashboardAlerts } from './components/DashboardAlerts'
 import { Users, Plus, BarChart3 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { useNavigate } from 'react-router-dom'
@@ -148,7 +147,6 @@ export default function Dashboard() {
         </div>
         <div className="space-y-24">
           <CategoryChart data={data.categoryPerformance} />
-          <DashboardAlerts players={data.topPerformers} />
         </div>
       </div>
 

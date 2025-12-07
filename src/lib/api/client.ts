@@ -30,26 +30,29 @@ apiClient.interceptors.response.use(
     return response
   },
   (error: AxiosError) => {
-    // Handle 401 Unauthorized - redirect to login
+    const isLoginPage = window.location.pathname.includes('/login')
+
+    // Handle 401 Unauthorized
     if (error.response?.status === 401) {
-      // Show toast before redirect
-      toast.error('Sessão expirada. Faça login novamente.')
-      // Clear session storage
-      sessionStorage.removeItem('auth')
-      // Redirect to login if not already there
-      if (!window.location.pathname.includes('/login')) {
+      // Don't show toast or redirect if already on login page (failed login attempt)
+      if (!isLoginPage) {
+        // Show toast before redirect
+        toast.error('Sessão expirada. Faça login novamente.')
+        // Clear session storage
+        sessionStorage.removeItem('auth')
+        // Redirect to login
         window.location.href = '/login'
       }
     }
 
     // Handle 403 Forbidden - redirect to login
     if (error.response?.status === 403) {
-      // Show toast before redirect
-      toast.error('Sessão inválida. Faça login novamente.')
-      // Clear session storage
-      sessionStorage.removeItem('auth')
-      // Redirect to login if not already there
-      if (!window.location.pathname.includes('/login')) {
+      if (!isLoginPage) {
+        // Show toast before redirect
+        toast.error('Sessão inválida. Faça login novamente.')
+        // Clear session storage
+        sessionStorage.removeItem('auth')
+        // Redirect to login
         window.location.href = '/login'
       }
     }

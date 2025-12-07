@@ -184,6 +184,9 @@ export default function TeamsList() {
                 <p className="text-sm text-muted-foreground mt-8">
                   Crie seu primeiro time para começar a gerenciar jogadores e partidas
                 </p>
+                <p className="text-sm text-amber-600 mt-12 font-medium">
+                  ⚠️ Você precisa criar um time para acessar as outras funcionalidades do sistema
+                </p>
               </div>
               <Button onClick={() => setShowCreateModal(true)} className="h-50 gap-8">
                 <Plus className="h-20 w-20" />

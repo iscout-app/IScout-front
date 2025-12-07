@@ -7,8 +7,9 @@ import type {
   CategoryPerformance,
 } from '../types/dashboard.types'
 import type { Player } from '@/features/players/types/player.types'
-import type { Match } from '@/features/matches/api/matches.api'
+import type { MatchWithAthletes } from '@/features/matches/api/matches.api'
 import type { Training } from '@/features/trainings/api/trainings.api'
+import { calculateRating } from '@/features/statistics/services/ratingCalculator'
 
 /**
  * Aggregate dashboard data from multiple API calls
@@ -19,7 +20,7 @@ export class DashboardAggregator {
    */
   static aggregate(
     players: Player[],
-    matches: Match[],
+    matches: MatchWithAthletes[],
     trainings: Training[]
   ): DashboardSummary {
     const now = new Date()
@@ -75,15 +76,18 @@ export class DashboardAggregator {
    * Calculate overall average rating from players
    */
   private static calculateOverallAverage(players: Player[]): number {
-    if (players.length === 0) return 0
+    // Filter only players with matches played
+    const playersWithMatches = players.filter(p => p.stats.matches > 0)
+
+    if (playersWithMatches.length === 0) return 0
 
     // Simple formula: (goals * 2 + assists) / matches played, normalized to 0-10
-    const totalScore = players.reduce((sum, p) => {
-      const score = (p.stats.goals * 2 + p.stats.assists) / Math.max(p.stats.matches, 1)
+    const totalScore = playersWithMatches.reduce((sum, p) => {
+      const score = (p.stats.goals * 2 + p.stats.assists) / p.stats.matches
       return sum + score
     }, 0)
 
-    const average = totalScore / players.length
+    const average = totalScore / playersWithMatches.length
     return Math.min(10, Math.max(0, average))
   }
 
@@ -91,16 +95,28 @@ export class DashboardAggregator {
    * Calculate top 5 performers
    */
   private static calculateTopPerformers(players: Player[]): TopPerformer[] {
-    const playersWithScore = players.map((p) => {
-      const score =
-        (p.stats.goals * 3 + p.stats.assists * 2 - p.stats.yellowCards - p.stats.redCards * 3) /
-        Math.max(p.stats.matches, 1)
+    // Filter only players with matches played
+    const playersWithMatches = players.filter(p => p.stats.matches > 0)
+
+    const playersWithScore = playersWithMatches.map((p) => {
+      // Calculate rating per match using the unified formula
+      const goalsPerMatch = p.stats.goals / p.stats.matches
+      const assistsPerMatch = p.stats.assists / p.stats.matches
+      const yellowCardsPerMatch = p.stats.yellowCards / p.stats.matches
+      const redCardsPerMatch = p.stats.redCards / p.stats.matches
+
+      const average = calculateRating(
+        goalsPerMatch,
+        assistsPerMatch,
+        yellowCardsPerMatch,
+        redCardsPerMatch
+      )
 
       return {
         id: p.id,
         name: p.name,
         position: p.position,
-        average: Math.min(10, Math.max(0, score)),
+        average,
       }
     })
 
@@ -108,18 +124,59 @@ export class DashboardAggregator {
   }
 
   /**
-   * Calculate recent matches (returns empty until matchAthletes data is available)
+   * Calculate recent matches from match data with athlete performances
    */
-  private static calculateRecentMatches(_players: Player[], _matches: Match[]): RecentMatch[] {
-    // TODO: Implement real logic when matchAthletes endpoint is available
-    // For now, return empty array to avoid showing fake data
-    return []
+  private static calculateRecentMatches(players: Player[], matches: MatchWithAthletes[]): RecentMatch[] {
+    const recentMatches: RecentMatch[] = []
+
+    // Get last 10 matches (we'll show 10 most recent records)
+    const sortedMatches = [...matches].sort(
+      (a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime()
+    ).slice(0, 10)
+
+    // For each match, create a RecentMatch entry for each athlete
+    sortedMatches.forEach((match) => {
+      if (!match.athletes || match.athletes.length === 0) return
+
+      match.athletes.forEach((athletePerformance) => {
+        // Find player name - try from athlete nested object first, then from players array
+        let playerName = athletePerformance.athlete?.name
+        if (!playerName) {
+          const player = players.find(p => p.id === athletePerformance.athleteId)
+          playerName = player?.name || 'Jogador Desconhecido'
+        }
+
+        // Calculate rating using the unified formula
+        const rating = calculateRating(
+          athletePerformance.goals,
+          athletePerformance.assists,
+          athletePerformance.yellowCards,
+          athletePerformance.redCards
+        )
+
+        recentMatches.push({
+          id: `${match.id}-${athletePerformance.athleteId}`,
+          playerId: athletePerformance.athleteId,
+          playerName,
+          eventType: 'partida',
+          date: match.timestamp,
+          goals: athletePerformance.goals,
+          assists: athletePerformance.assists,
+          rating,
+        })
+      })
+    })
+
+    // Sort by date (most recent first) and limit to 10
+    return recentMatches
+      .sort((a, b) => new Date(b.date).getTime() - new Date(a.date).getTime())
+      .slice(0, 10)
   }
 
   /**
    * Calculate activity data for last 7 days
    */
-  private static calculateActivityData(matches: Match[], trainings: Training[]): ActivityData {
+  private static calculateActivityData(matches: MatchWithAthletes[], trainings: Training[]): ActivityData {
     const labels: string[] = []
     const matchCounts: number[] = []
     const trainingCounts: number[] = []
@@ -141,12 +198,15 @@ export class DashboardAggregator {
       // Count matches on this day
       const matchCount = matches.filter((m) => {
         const matchDate = new Date(m.timestamp)
+        matchDate.setHours(0, 0, 0, 0) // Normalize to midnight local time
         return matchDate >= date && matchDate < nextDate
       }).length
 
       // Count trainings on this day
       const trainingCount = trainings.filter((t) => {
-        const trainingDate = new Date(t.date)
+        // Parse date string as local date (YYYY-MM-DD)
+        const [year, month, day] = t.date.split('-').map(Number)
+        const trainingDate = new Date(year, month - 1, day) // month is 0-indexed
         return trainingDate >= date && trainingDate < nextDate
       }).length
 
@@ -184,14 +244,26 @@ export class DashboardAggregator {
   private static calculateCategoryPerformance(players: Player[]): CategoryPerformance[] {
     const positionMap = new Map<string, { totalRating: number; count: number }>()
 
-    players.forEach((p) => {
-      const rating =
-        (p.stats.goals * 3 + p.stats.assists * 2 - p.stats.yellowCards - p.stats.redCards * 3) /
-        Math.max(p.stats.matches, 1)
+    // Filter only players with matches played
+    const playersWithMatches = players.filter(p => p.stats.matches > 0)
+
+    playersWithMatches.forEach((p) => {
+      // Calculate rating per match using the unified formula
+      const goalsPerMatch = p.stats.goals / p.stats.matches
+      const assistsPerMatch = p.stats.assists / p.stats.matches
+      const yellowCardsPerMatch = p.stats.yellowCards / p.stats.matches
+      const redCardsPerMatch = p.stats.redCards / p.stats.matches
+
+      const rating = calculateRating(
+        goalsPerMatch,
+        assistsPerMatch,
+        yellowCardsPerMatch,
+        redCardsPerMatch
+      )
 
       const current = positionMap.get(p.position) || { totalRating: 0, count: 0 }
       positionMap.set(p.position, {
-        totalRating: current.totalRating + Math.min(10, Math.max(0, rating)),
+        totalRating: current.totalRating + rating,
         count: current.count + 1,
       })
     })

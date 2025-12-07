@@ -18,6 +18,11 @@ export interface MatchAthlete {
   assists: number
   yellowCards: number
   redCards: number
+  athlete?: {
+    id: string
+    name: string
+    birthdate: string
+  }
 }
 
 export interface MatchWithAthletes extends Match {
@@ -25,8 +30,8 @@ export interface MatchWithAthletes extends Match {
 }
 
 export const matchesApi = {
-  getAll: async (filters?: { teamId?: string; from?: string; to?: string }) => {
-    const response = await apiClient.get<Match[]>('/matches', { params: filters })
+  getAll: async (filters?: { teamId?: string; from?: string; to?: string }): Promise<MatchWithAthletes[]> => {
+    const response = await apiClient.get<MatchWithAthletes[]>('/matches', { params: filters })
     const data = Array.isArray(response.data) ? response.data : (response.data as any).data || []
     return data
   },

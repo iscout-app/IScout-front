@@ -15,17 +15,7 @@ import {
 import { Search } from 'lucide-react'
 import { PlayerFormModal } from '../components/PlayerFormModal'
 import { useTeam } from '@/features/teams/context/TeamContext'
-
-function calculateAge(birthdate: string): number {
-  const birth = new Date(birthdate)
-  const today = new Date()
-  let age = today.getFullYear() - birth.getFullYear()
-  const m = today.getMonth() - birth.getMonth()
-  if (m < 0 || (m === 0 && today.getDate() < birth.getDate())) {
-    age--
-  }
-  return age
-}
+import { calculateAge, getAgeCategory } from '@/lib/utils/age'
 
 export default function PlayersList() {
   const { currentTeam } = useTeam()
@@ -52,7 +42,11 @@ export default function PlayersList() {
       const matchesSearch =
         player.name.toLowerCase().includes(searchTerm.toLowerCase()) ||
         player.position.toLowerCase().includes(searchTerm.toLowerCase())
-      const matchesCategoria = !categoriaFilter
+
+      // Calculate player's category based on birthdate
+      const playerCategory = getAgeCategory(player.birthdate)
+      const matchesCategoria = !categoriaFilter || playerCategory === categoriaFilter
+
       const matchesPosicao =
         !posicaoFilter ||
         player.position.toLowerCase().includes(posicaoFilter.toLowerCase())
