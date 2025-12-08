@@ -38,8 +38,13 @@ export class DashboardAggregator {
     ).length
     const eventsThisWeek = matchesThisWeek + trainingsThisWeek
 
-    // Goals this week (sum from player stats)
-    const goalsThisWeek = players.reduce((sum, p) => sum + (p.stats.goals || 0), 0)
+    // Goals this week (sum from matches in the last week)
+    const goalsThisWeek = matches
+      .filter((m) => new Date(m.timestamp) >= weekStart)
+      .reduce((sum, match) => {
+        const matchGoals = match.athletes?.reduce((total, athlete) => total + (athlete.goals || 0), 0) || 0
+        return sum + matchGoals
+      }, 0)
 
     // Overall average (simple calculation based on goals and assists)
     const overallAverage = this.calculateOverallAverage(players)
@@ -81,14 +86,24 @@ export class DashboardAggregator {
 
     if (playersWithMatches.length === 0) return 0
 
-    // Simple formula: (goals * 2 + assists) / matches played, normalized to 0-10
-    const totalScore = playersWithMatches.reduce((sum, p) => {
-      const score = (p.stats.goals * 2 + p.stats.assists) / p.stats.matches
-      return sum + score
+    // Calculate rating per match using the unified formula
+    const totalRating = playersWithMatches.reduce((sum, p) => {
+      const goalsPerMatch = p.stats.goals / p.stats.matches
+      const assistsPerMatch = p.stats.assists / p.stats.matches
+      const yellowCardsPerMatch = p.stats.yellowCards / p.stats.matches
+      const redCardsPerMatch = p.stats.redCards / p.stats.matches
+
+      const rating = calculateRating(
+        goalsPerMatch,
+        assistsPerMatch,
+        yellowCardsPerMatch,
+        redCardsPerMatch
+      )
+
+      return sum + rating
     }, 0)
 
-    const average = totalScore / playersWithMatches.length
-    return Math.min(10, Math.max(0, average))
+    return totalRating / playersWithMatches.length
   }
 
   /**
@@ -135,10 +150,16 @@ export class DashboardAggregator {
     ).slice(0, 10)
 
     // For each match, create a RecentMatch entry for each athlete
+    // Only include athletes that belong to the current team
+    const playerIds = new Set(players.map(p => p.id))
+
     sortedMatches.forEach((match) => {
       if (!match.athletes || match.athletes.length === 0) return
 
       match.athletes.forEach((athletePerformance) => {
+        // Skip athletes that don't belong to the current team
+        if (!playerIds.has(athletePerformance.athleteId)) return
+
         // Find player name - try from athlete nested object first, then from players array
         let playerName = athletePerformance.athlete?.name
         if (!playerName) {
