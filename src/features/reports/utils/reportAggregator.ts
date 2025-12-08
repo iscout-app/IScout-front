@@ -19,7 +19,7 @@ export function aggregatePlayerReport(
   // Calculate averages
   const ratings = stats.filter((s) => s.performanceRating !== undefined && s.performanceRating !== null)
   const averageRating = ratings.length > 0
-    ? ratings.reduce((sum, s) => sum + (s.performanceRating || 0), 0) / ratings.length / 10 // Convert from 0-100 to 0-10
+    ? ratings.reduce((sum, s) => sum + (s.performanceRating || 0), 0) / ratings.length // Already in 0-10 scale
     : 0
 
   const goalsPerMatch = totalMatches > 0 ? totalGoals / totalMatches : 0
@@ -43,7 +43,7 @@ export function aggregatePlayerReport(
       date: s.matchDate,
       goals: s.goals,
       assists: s.assists,
-      rating: s.performanceRating ? s.performanceRating / 10 : 0,
+      rating: s.performanceRating || 0, // Already in 0-10 scale
       yellowCards: s.yellowCards,
       redCards: s.redCards,
     }))
