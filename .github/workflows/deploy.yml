@@ -2,7 +2,7 @@ name: Deploy to Server
 
 on:
   push:
-    branches: [main, feat--implementa-integracao-com-api-e-refatora-aplicaçao-para-usar-vitejs]
+    branches: [master]
   workflow_dispatch:
 
 jobs:
