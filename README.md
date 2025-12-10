@@ -1,8 +1,8 @@
-# IScout - React + TypeScript
+# IScout
 
-Sistema de Scout de Jovens Jogadores de Futebol - Versão React Moderna
+Projeto utilizado como artefato desenvolvido durante a disciplicina Projeto Integrador I (EAD), ministrada pelo professor Me. Augusto César, no curso de Bacharelado em Sistemas de Informação.
 
-## 🚀 Stack Tecnológica
+## Stack
 
 - **Framework:** React 18+ com TypeScript
 - **Build Tool:** Vite
@@ -14,36 +14,24 @@ Sistema de Scout de Jovens Jogadores de Futebol - Versão React Moderna
 - **Forms:** React Hook Form + Zod
 - **HTTP Client:** Axios
 
-## 📦 Instalação
+## Instalação
+
+Assumindo que o `.env` já está configurado,
 
 ```bash
 bun install
 ```
 
-## 🏃‍♂️ Desenvolvimento
-
 ```bash
-bun run dev
+bun dev
 ```
 
 Aplicação: http://localhost:5173/
 
-## 🧪 Credenciais de Teste
+## Hospedagem
 
-- **Admin:** admin@iscout.com / password
-- **Técnico:** tecnico@iscout.com / password  
-- **Olheiro:** olheiro@iscout.com / password
-- **Responsável:** responsavel@iscout.com / password
+O projeto está hospedado em uma máquina da Oracle, com 1ocpu e 1 gb de RAM, rodando em Ubuntu 24.04. Com reverse proxy configurada sob Nginx - sem domínio.
 
-## ✅ Implementado
+# Requisitos:
 
-- Sistema de autenticação (Context API)
-- Sistema RBAC completo
-- React Router com rotas protegidas
-- Layout com Header e Navigation dinâmica
-- Página de Login funcional
-- Todas as páginas placeholder criadas
-
-## 📚 Próximos Passos
-
-Implementar features: Dashboard → Players → Statistics → History → Evolution → Reports → Users
+- bun
